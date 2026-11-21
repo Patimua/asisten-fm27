@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="id" translate="no">
+<head>
+<meta charset="utf-8">
+<meta name="google" content="notranslate">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Asisten FM27</title>
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="asisten-32.png">
+<link rel="icon" type="image/png" sizes="48x48" href="asisten-48.png">
+<link rel="icon" type="image/png" sizes="96x96" href="asisten-96.png">
+<link rel="icon" type="image/png" sizes="256x256" href="asisten-256.png">
+<link rel="apple-touch-icon" href="asisten-256.png">
+<script>try { document.documentElement.dataset.theme = localStorage.getItem('tema') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); } catch (e) { document.documentElement.dataset.theme = 'light'; }</script>
+<link rel="stylesheet" href="app.css?v=4">
+<link rel="stylesheet" href="app-v2.css?v=4"><link rel="stylesheet" href="app-profile.css?v=4">
+<link rel="stylesheet" href="app-theme.css?v=27">
+<link rel="stylesheet" href="app-latihan.css?v=3">
+<link rel="stylesheet" href="app-kantor.css?v=7">
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand">
+      <div class="brand-mark fm27"><img src="asisten-64.png" alt="Asisten FM27" width="36" height="36"></div>
+      <div class="brand-txt"><div class="brand-name">Asisten FM27</div><div class="brand-sub">Ruang Teknik Pribadi</div></div>
+      <button class="side-tg" id="sideTg" title="Perkecil / perbesar menu samping" aria-label="Perkecil menu samping"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="side-foot" id="sideFoot">Memuat data…</div>
+  </aside>
+  <section class="main">
+    <header class="top">
+      <button class="back-btn" id="backBtn" title="Kembali (tombol Back mouse · Alt+← · Backspace)" aria-label="Kembali"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <div class="club-chip" id="clubChip"></div>
+      <div class="gsearch">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="gq" placeholder="Cari pemain, klub, atau negara…  (tekan / )" autocomplete="off">
+        <div class="gresults" id="gres"></div>
+      </div>
+      <div class="pills" id="pills"></div>
+      <button class="theme-tg" id="themeTg" title="Ganti tema terang / gelap" aria-label="Ganti tema terang / gelap">
+        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M4.2 4.2l1.8 1.8M18 18l1.8 1.8M2 12h2.5M19.5 12H22M4.2 19.8 6 18M18 6l1.8-1.8"/></svg>
+        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>
+      </button>
+    </header>
+    <div class="page" id="page"></div>
+    <footer class="statbar" id="statbar"></footer>
+  </section>
+</div>
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer"></aside>
+<div class="toast" id="toast"></div>
+<script src="app.js?v=52"></script>
+<script src="app-db.js?v=1"></script>
+</body>
+</html>

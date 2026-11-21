@@ -1,0 +1,117 @@
+/* =====================================================================
+   Tampilan v2 — lebih lapang, hangat, dan bersahabat (menimpa app.css)
+   ===================================================================== */
+:root {
+  --bg: #f5f3ee; --bg-2: #ece9e1; --card: #fff; --line: #e8e4da; --line-2: #d8d3c6;
+  --ink: #1d2126; --ink-2: #48505a; --ink-3: #80878f;
+  --brand: #12705f; --brand-2: #0c574a; --brand-soft: #e2f2ed; --brand-tint: #f1f8f5;
+  --r: 18px;
+  --shadow: 0 1px 2px rgba(25, 30, 36, .04), 0 6px 20px rgba(25, 30, 36, .05);
+  --shadow-hover: 0 2px 4px rgba(25, 30, 36, .05), 0 14px 34px rgba(25, 30, 36, .10);
+}
+body { font-size: 14.5px; line-height: 1.45; }
+
+/* Sidebar */
+.side { background: #fbfaf6; padding: 22px 14px; }
+.brand { padding: 4px 10px 18px; }
+.nav a { padding: 10px 12px; border-radius: 12px; position: relative; margin: 1px 0; }
+.nav a.on { background: #fff; color: var(--brand-2); box-shadow: var(--shadow); }
+.nav a.on::before { content: ""; position: absolute; left: -14px; top: 9px; bottom: 9px; width: 4px; border-radius: 0 4px 4px 0; background: var(--brand); }
+.nav a.on svg { color: var(--brand); }
+.nav-label { padding: 18px 12px 6px; }
+.side-foot { background: var(--bg-2); border-radius: 12px; padding: 12px; margin: 14px 2px 0; }
+
+/* Header & halaman */
+.top { padding: 14px 32px; background: rgba(245, 243, 238, .88); }
+.gsearch input { border-radius: 14px; padding: 11px 14px 11px 40px; box-shadow: var(--shadow); border-color: transparent; }
+.page { padding: 30px 32px 72px; }
+.page > * { animation: rise .35s ease both; }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.page-head { margin-bottom: 24px; }
+.page-head h1 { font-size: 30px; letter-spacing: -.7px; }
+.page-head p { font-size: 14.5px; margin-top: 6px; }
+
+/* Kartu & tombol */
+.grid { gap: 18px; }
+.card { border-radius: var(--r); padding: 20px 22px; }
+.card h3 { font-size: 15.5px; margin-bottom: 16px; }
+.card h3 small { font-size: 12.5px; }
+.stat .v { font-size: 30px; }
+.hero { background: linear-gradient(135deg, #12705f 0%, #0e5f51 55%, #134a42 100%); }
+.btn { border-radius: 12px; padding: 10px 16px; font-size: 13.5px; }
+.btn:hover { border-color: var(--brand); color: var(--brand-2); background: var(--brand-tint); }
+.btn.primary:hover { color: #fff; background: var(--brand-2); }
+.btn:active { transform: translateY(1px); }
+.btn:focus-visible, .chip:focus-visible, .nav a:focus-visible, .stage:focus-visible, .qa:focus-visible, .fmq:focus-visible { outline: 3px solid rgba(18, 112, 95, .35); outline-offset: 2px; }
+.btn.sm { padding: 6px 11px; border-radius: 9px; }
+.btn.fm { background: #1d2126; color: #fff; border-color: #1d2126; }
+.btn.fm:hover { background: #000; color: #fff; border-color: #000; }
+.chip { padding: 8px 14px; font-size: 13.5px; }
+.field label { font-size: 12.5px; text-transform: none; letter-spacing: 0; color: var(--ink-2); }
+.field input, .field select, .inp { padding: 10px 12px; border-radius: 11px; }
+
+/* Tabel: baris lega + tombol buka cepat di FM */
+.tbl { font-size: 13.5px; }
+.tbl th { font-size: 11.5px; padding: 12px; }
+.tbl td { padding: 11px 12px; }
+.tbl tr.click:hover td { background: var(--brand-tint); }
+.fmq { margin-left: 8px; width: 30px; height: 30px; border-radius: 9px; border: 1px solid var(--line); background: #fff; display: inline-grid; place-items: center; cursor: pointer; opacity: 0; transition: opacity .15s, transform .15s, background .15s; flex: none; color: var(--ink); padding: 0; }
+.fmq svg { width: 15px; height: 15px; }
+tr:hover .fmq, .li:hover .fmq, .gresults .row:hover .fmq, .fmq:focus-visible { opacity: 1; }
+.fmq:hover { background: #1d2126; color: #fff; border-color: #1d2126; transform: scale(1.06); }
+@media (hover: none) { .fmq { opacity: 1; } }
+
+/* Beranda: sapaan & aksi cepat */
+.hello { display: flex; align-items: center; gap: 14px; }
+.hello .sun { font-size: 36px; line-height: 1; }
+.quick { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 18px; }
+.qa { display: flex; gap: 14px; align-items: flex-start; padding: 16px 18px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); box-shadow: var(--shadow); color: var(--ink); transition: transform .18s, box-shadow .18s, border-color .18s; }
+.qa:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); border-color: #cfe7df; }
+.qa .qi { width: 44px; height: 44px; border-radius: 13px; display: grid; place-items: center; font-size: 21px; flex: none; }
+.qa b { display: block; font-size: 14.5px; }
+.qa small { color: var(--ink-3); font-size: 12.5px; line-height: 1.4; display: block; margin-top: 3px; }
+.qi.c1 { background: #e2f2ed; } .qi.c2 { background: #f7efdd; } .qi.c3 { background: #e7eefa; } .qi.c4 { background: #fbe9e7; }
+@media (max-width: 1200px) { .quick { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .quick { grid-template-columns: 1fr; } .page { padding: 20px 16px 60px; } .top { padding: 12px 16px; } .page-head h1 { font-size: 24px; } }
+
+/* Daftar & saran */
+.li { padding: 11px 8px; margin: 0 -8px; border-radius: 10px; border-bottom-color: transparent; transition: background .12s; }
+.li:hover { background: var(--brand-tint); }
+.alert { border-radius: 12px; padding: 11px 13px; transition: transform .12s; }
+.alert:hover { transform: translateX(2px); }
+
+/* Toast berikon & berwarna */
+.toast { display: flex; align-items: center; gap: 10px; padding: 12px 18px 12px 12px; border-radius: 14px; font-size: 13.5px; box-shadow: var(--shadow-lg); max-width: min(600px, 92vw); line-height: 1.4; }
+.toast .ti { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; flex: none; background: rgba(255, 255, 255, .16); }
+.toast.ok { background: #0f5d4f; } .toast.err { background: #a8352f; } .toast.info { background: #1d2126; }
+
+/* Dialog konfirmasi */
+.modal-bg { position: fixed; inset: 0; background: rgba(29, 33, 38, .38); backdrop-filter: blur(2px); display: grid; place-items: center; z-index: 100; animation: fade .15s ease; padding: 16px; }
+@keyframes fade { from { opacity: 0; } }
+.modal { background: var(--card); border-radius: 20px; width: min(480px, 100%); box-shadow: var(--shadow-lg); padding: 24px 24px 20px; animation: pop .2s cubic-bezier(.2, .9, .3, 1.2); }
+@keyframes pop { from { transform: scale(.94); opacity: 0; } }
+.modal .mi { width: 48px; height: 48px; border-radius: 15px; display: grid; place-items: center; font-size: 24px; background: var(--brand-soft); margin-bottom: 14px; }
+.modal.warn .mi { background: var(--amber-soft); }
+.modal h2 { margin: 0 0 8px; font-family: var(--font-d); font-size: 20px; letter-spacing: -.3px; }
+.modal .mb { color: var(--ink-2); line-height: 1.55; font-size: 14px; }
+.modal .mb .sample { margin-top: 12px; padding: 10px 12px; background: var(--bg); border-radius: 11px; font-size: 13px; }
+.modal .ma { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+/* Petunjuk & drawer */
+.tip { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 14px; background: var(--brand-tint); border: 1px dashed #bfe0d5; color: var(--ink-2); font-size: 13.5px; line-height: 1.5; margin-bottom: 18px; }
+.tip b { color: var(--brand-2); }
+.tip .x { margin-left: auto; background: none; border: 0; cursor: pointer; color: var(--ink-3); font-size: 18px; line-height: 1; padding: 0 2px; }
+.drawer-head { padding: 24px 28px 0; }
+.drawer-body { padding: 22px 28px 44px; }
+.tabs button { padding: 11px 15px; border-radius: 10px 10px 0 0; }
+.tabs button:hover { color: var(--ink); background: var(--bg); }
+.empty { padding: 70px 20px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+/* Youth intake */
+.stage-row.yrange { grid-template-columns: repeat(3, 1fr); margin-bottom: 0; }
+.stage.on { outline: 3px solid var(--brand); outline-offset: 1px; box-shadow: var(--shadow-hover); }
+
+/* Logo FM27 di sidebar */
+.brand-mark.fm27 { background: none; box-shadow: none; width: 40px; height: 40px; }
+.brand-mark.fm27 img { width: 40px; height: 40px; display: block; border-radius: 11px; filter: drop-shadow(0 4px 10px rgba(0,0,0,.18)); }

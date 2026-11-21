@@ -1,0 +1,18 @@
+# Data pribadi pengguna (riwayat cheat, target, log, profil jendela) — JANGAN diunggah
+data/
+
+# Cadangan & log
+*.bak
+*.bak*
+*.log
+*.lama
+
+# Hasil build (dibuat ulang oleh csc / native\setup\build.js; dibagikan lewat GitHub Releases)
+native/**/*.exe
+native/**/*.dll
+native/*.JANGAN-DIPAKAI
+native/fmprobe.*
+native/setup/build/
+
+# Pengaturan lokal editor / Claude
+.claude/

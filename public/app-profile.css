@@ -1,0 +1,121 @@
+/* =====================================================================
+   Profil pemain ala FM — header foto, peran berbintang, radar 8 sisi, panel status
+   ===================================================================== */
+.drawer { width: min(1320px, 97vw); }
+.pro-head { padding: 0; background: linear-gradient(120deg, #0f5d4f 0%, #12705f 45%, #1b7f6c 100%); color: #fff; border-bottom: 0; }
+.pro-top { display: flex; gap: 20px; align-items: center; padding: 22px 28px 18px; flex-wrap: wrap; }
+.face { position: relative; border-radius: 22px; overflow: hidden; flex: none; background: rgba(255, 255, 255, .14); box-shadow: 0 6px 20px rgba(0, 0, 0, .18); }
+.face img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; background: linear-gradient(180deg, #e6efe9, #cfe2d8); }
+.face .ava { width: 100% !important; height: 100% !important; border-radius: 0; font-size: 30px; }
+.pro-id { min-width: 200px; flex: 1; }
+.pro-id h2 { margin: 0; font-family: var(--font-d); font-size: 28px; letter-spacing: -.6px; color: #fff; }
+.pro-pos { opacity: .85; font-size: 14px; margin-top: 2px; }
+.pro-head .badge { background: rgba(255, 255, 255, .16); color: #fff; }
+.pro-head .badge.great { background: var(--gold); color: #fff; }
+.pro-blk { display: flex; gap: 10px; align-items: center; padding: 4px 18px; border-left: 1px solid rgba(255, 255, 255, .18); min-width: 0; }
+.pro-blk b { display: block; font-size: 14.5px; white-space: nowrap; }
+.pro-blk small { display: block; opacity: .78; font-size: 12.5px; white-space: nowrap; }
+.pro-logo { width: 38px; height: 38px; object-fit: contain; background: #fff; border-radius: 10px; padding: 3px; }
+.pro-abil { display: flex; gap: 18px; align-items: center; padding: 6px 0 6px 18px; border-left: 1px solid rgba(255, 255, 255, .18); }
+.pro-abil div { display: flex; flex-direction: column; }
+.pro-abil small { font-size: 10.5px; text-transform: uppercase; letter-spacing: .7px; opacity: .8; }
+.pro-abil .stars { color: #ffd166; font-size: 15px; letter-spacing: 1px; }
+.pro-abil .stars span { color: rgba(255, 255, 255, .28) !important; }
+.pro-abil b { font-size: 13px; opacity: .9; }
+.pro-abil .live-tag { background: #ffd166; color: #3b2a00; }
+.pro-bar { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding: 0 22px 0 18px; background: rgba(0, 0, 0, .12); flex-wrap: wrap; }
+.pro-bar .tabs { border: 0; margin: 0; }
+.pro-bar .tabs button { color: rgba(255, 255, 255, .78); }
+.pro-bar .tabs button:hover { background: rgba(255, 255, 255, .1); color: #fff; }
+.pro-bar .tabs button.on { background: var(--bg); color: var(--brand-2); }
+.pro-bar .row-flex { padding: 8px 0; }
+.pro-bar .btn { background: rgba(255, 255, 255, .14); color: #fff; border-color: transparent; }
+.pro-bar .btn:hover { background: rgba(255, 255, 255, .24); color: #fff; }
+.pro-bar .btn.fm { background: #fff; color: var(--brand-2); }
+.pro-bar .btn.gold { background: var(--gold); }
+
+.pro-grid { display: grid; grid-template-columns: 270px minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
+.pro-left, .pro-right { display: grid; gap: 16px; }
+.pro-grid .card { padding: 16px 18px; }
+.pro-grid h4, .pro-cards h4 { margin: 0 0 12px; font-size: 12px; text-transform: uppercase; letter-spacing: .8px; color: var(--ink-3); display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.pro-grid h4 small { text-transform: none; letter-spacing: 0; font-weight: 500; font-size: 12px; }
+.pro-attrs .fm-attrs { box-shadow: none; border: 0; padding: 0; background: none; }
+.tiny { font-size: 12px; margin: 10px 0 0; }
+.role-list { display: grid; gap: 4px; }
+.role { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; padding: 7px 9px; border: 1px solid transparent; border-radius: 10px; background: none; cursor: pointer; text-align: left; font: inherit; color: var(--ink); }
+.role:hover { background: var(--brand-tint); }
+.role.on { background: var(--brand-soft); border-color: #bfe0d5; }
+.role .stars { color: var(--gold); font-size: 12px; letter-spacing: .5px; }
+.role .rn { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.role .rn small { color: var(--ink-3); }
+.role b { font-size: 12.5px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.kv { display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; font-size: 13.5px; border-bottom: 1px dashed var(--line); }
+.kv:last-child { border-bottom: 0; }
+.kv span { color: var(--ink-3); }
+details.hid summary { list-style: none; cursor: pointer; }
+details.hid summary::-webkit-details-marker { display: none; }
+details.hid summary h4 { margin: 0; }
+details.hid summary h4::after { content: "▾"; font-size: 13px; transition: transform .15s; }
+details.hid[open] summary h4 { margin-bottom: 12px; }
+details.hid[open] summary h4::after { transform: rotate(180deg); }
+
+/* Radar */
+.fm-radar { width: 100%; display: block; }
+.fm-radar .rg { fill: none; stroke: #e2ded3; stroke-width: 1; }
+.fm-radar .rg.out { fill: #f7f6f1; stroke: #cfcabd; }
+.fm-radar .rl { stroke: #e7e3d9; }
+.fm-radar .rv { fill: rgba(18, 112, 95, .22); stroke: var(--brand); stroke-width: 2.2; stroke-linejoin: round; }
+.fm-radar .rd { fill: var(--brand); stroke: #fff; stroke-width: 1.5; }
+.fm-radar .rt { font-size: 17px; fill: var(--ink-2); font-weight: 600; }
+.fm-radar .a5t { fill: var(--gold); font-weight: 800; }
+.fm-radar .a4t { fill: var(--brand); font-weight: 800; }
+.fm-radar .a3t { fill: #2e8a6f; font-weight: 700; }
+.fm-radar .a2t { fill: #8a6d2f; font-weight: 700; }
+.fm-radar .a1t { fill: #b0b4ba; font-weight: 700; }
+
+/* Panel status bawah */
+.pro-cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 1.6fr); gap: 16px; margin-top: 16px; }
+.pro-cards .card { padding: 16px 18px; }
+.sc-big { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.sc-big .emo { font-size: 26px; line-height: 1; }
+.sc-big b { font-size: 17px; font-family: var(--font-d); letter-spacing: -.2px; }
+.sc-big b.good { color: var(--brand); }
+.sc-big b.warn { color: var(--amber); }
+.sc-big b.bad { color: var(--red, #b3372f); }
+.meter { height: 7px; border-radius: 99px; background: var(--bg-2); overflow: hidden; margin: 4px 0 6px; }
+.meter i { display: block; height: 100%; border-radius: 99px; background: var(--brand); transition: width .4s ease; }
+.meter.warn i { background: var(--amber); }
+.meter.bad i { background: var(--red, #b3372f); }
+.meter.good i { background: linear-gradient(90deg, var(--brand), #2bb38f); }
+.pro-cards small { font-size: 12px; }
+
+/* Kerangka saat memuat */
+.sk { background: linear-gradient(90deg, #ece9e1 25%, #f5f3ee 50%, #ece9e1 75%); background-size: 200% 100%; animation: shimmer 1.1s linear infinite; border-radius: 16px; }
+.sk-head { height: 150px; border-radius: 0; background: linear-gradient(120deg, #0f5d4f, #1b7f6c); animation: none; }
+.sk-row { display: grid; grid-template-columns: 270px 1fr 300px; gap: 16px; padding: 26px 28px; }
+.sk-col { height: 420px; }
+.sk-col.wide { height: 520px; }
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+/* Youth intake */
+.stage-row.yrange { grid-template-columns: repeat(3, 1fr); margin-bottom: 0; }
+.stage.on { outline: 3px solid var(--brand); outline-offset: 1px; box-shadow: var(--shadow-hover); }
+
+@media (max-width: 1250px) {
+  .pro-grid { grid-template-columns: 250px minmax(0, 1fr); }
+  .pro-right { grid-column: 1 / -1; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .pro-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pro-cards .wide { grid-column: 1 / -1; }
+}
+@media (max-width: 900px) {
+  .pro-grid, .pro-right { grid-template-columns: 1fr; }
+  .pro-blk { display: none; }
+  .pro-attrs .fm-attrs { grid-template-columns: 1fr 1fr; }
+  .sk-row { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .pro-cards { grid-template-columns: 1fr; }
+  .pro-attrs .fm-attrs { grid-template-columns: 1fr; }
+  .pro-top { padding: 18px 16px 14px; }
+  .pro-abil { border-left: 0; padding-left: 0; }
+}

@@ -1,0 +1,119 @@
+/* Halaman Latihan — perencana jadwal mingguan */
+:root, :root[data-theme="light"] { --lt-purple: #7c3aed; --lt-teal: #0d9488; --lt-grey: #7a869c; }
+:root[data-theme="dark"] { --lt-purple: #a78bfa; --lt-teal: #2dd4bf; --lt-grey: #6c7a93; }
+
+.lt-head-meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 6px; }
+.lt-weeks { display: inline-flex; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 3px; gap: 2px; }
+.lt-weeks button { border: 0; background: none; padding: 7px 12px; border-radius: 9px; font-weight: 600; font-size: 13px; color: var(--ink-2); cursor: pointer; }
+.lt-weeks button.on { background: var(--brand); color: #fff; }
+:root[data-theme="dark"] .lt-weeks button.on { color: #04110a; }
+
+/* Strip jadwal laga */
+.lt-fx { display: flex; gap: 8px; flex-wrap: wrap; padding: 2px; margin-bottom: 14px; }
+.lt-fx .f { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 7px 11px; font-size: 12.5px; }
+.lt-fx .f b { font-weight: 700; }
+.lt-fx .f small { color: var(--ink-3); }
+.lt-fx .ha { font-family: var(--font-d); font-size: 13px; width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; background: var(--brand-soft); color: var(--brand); }
+.lt-fx .ha.a { background: var(--blue-soft); color: var(--blue); }
+.lt-fx .gap { font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 99px; background: var(--bg-2); color: var(--ink-2); }
+.lt-fx .gap.tight { background: var(--red-soft); color: var(--red); }
+.lt-fx .gap.mid { background: var(--amber-soft); color: var(--amber); }
+
+/* Grid minggu */
+.lt-grid { display: grid; grid-template-columns: repeat(7, minmax(150px, 1fr)); gap: 10px; overflow-x: auto; padding-bottom: 6px; }
+.lt-day { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 10px; display: flex; flex-direction: column; gap: 7px; min-width: 150px; box-shadow: var(--shadow); }
+.lt-day.today { border-color: var(--brand); box-shadow: 0 0 0 2px var(--brand-soft), var(--shadow); }
+.lt-day.past { opacity: .5; }
+.lt-day.past:hover { opacity: 1; }
+.lt-day .dh { display: flex; justify-content: space-between; align-items: baseline; }
+.lt-day .dh b { font-family: var(--font-d); font-size: 17px; letter-spacing: .5px; text-transform: uppercase; }
+.lt-day .dh small { color: var(--ink-3); font-size: 12px; }
+.lt-type { font-size: 10.5px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; text-align: center; padding: 4px 6px; border-radius: 8px; --c: var(--lt-grey); background: color-mix(in srgb, var(--c) 16%, transparent); color: var(--c); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lt-type.high { --c: var(--red); } .lt-type.medium { --c: var(--amber); } .lt-type.tactical { --c: var(--blue); }
+.lt-type.prep { --c: var(--lt-purple); } .lt-type.match { --c: var(--brand); } .lt-type.recovery, .lt-type.rest { --c: var(--lt-teal); }
+.lt-s { --c: var(--lt-grey); border: 1px solid color-mix(in srgb, var(--c) 35%, var(--line)); border-left: 3px solid var(--c); background: color-mix(in srgb, var(--c) 9%, var(--card)); border-radius: 9px; padding: 6px 8px; position: relative; }
+.lt-s .sl { font-size: 9.5px; font-weight: 800; letter-spacing: .6px; color: var(--ink-3); text-transform: uppercase; display: flex; justify-content: space-between; }
+.lt-s .sn { font-weight: 700; font-size: 12.8px; line-height: 1.25; margin: 1px 0; }
+.lt-s .sc { font-size: 11px; color: var(--ink-3); }
+.lt-s .dots { letter-spacing: 1px; color: var(--c); font-size: 9px; }
+.lt-s.c-Menyerang { --c: var(--red); } .lt-s.c-Penguasaan { --c: var(--blue); } .lt-s.c-Bertahan { --c: var(--lt-purple); }
+.lt-s.c-Bola-Mati { --c: var(--gold); } .lt-s.c-Kebugaran { --c: var(--lt-teal); } .lt-s.c-Pengembangan { --c: var(--brand); }
+.lt-s.c-Pemulihan { --c: var(--lt-grey); } .lt-s.c-Laga { --c: var(--brand); } .lt-s.c-Lainnya { --c: var(--amber); }
+.lt-s.c-Laga .sn { color: var(--brand); }
+.lt-s .weak { position: absolute; top: 5px; right: 6px; font-size: 11px; cursor: help; }
+.lt-day .note { font-size: 11.5px; color: var(--ink-2); line-height: 1.35; margin-top: auto; }
+.lt-load { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-3); }
+.lt-load .bar { flex: 1; height: 5px; border-radius: 9px; background: var(--bg-2); overflow: hidden; }
+.lt-load .bar i { display: block; height: 100%; border-radius: 9px; background: var(--brand); }
+.lt-load .bar i.h { background: var(--red); } .lt-load .bar i.m { background: var(--amber); }
+.lt-fm { border-top: 1px dashed var(--line-2); padding-top: 6px; font-size: 11px; color: var(--ink-3); line-height: 1.4; }
+.lt-fm b { color: var(--ink-2); font-weight: 700; }
+.lt-fm.same { color: var(--brand); }
+.lt-legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 11.5px; color: var(--ink-3); margin: 10px 2px 0; }
+.lt-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.lt-legend i { width: 10px; height: 10px; border-radius: 3px; background: var(--c); display: inline-block; }
+
+/* Bagian bawah */
+.lt-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 16px; margin-top: 16px; align-items: start; }
+.lt-prog { font-family: var(--font-d); font-size: 13px; padding: 4px 10px; border-radius: 8px; background: var(--bg-2); color: var(--ink-2); letter-spacing: .3px; }
+.lt-grp { margin-top: 12px; }
+.lt-grp > .gt { display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; margin-bottom: 6px; }
+.lt-grp > .gt.bad { color: var(--red); } .lt-grp > .gt.info { color: var(--blue); } .lt-grp > .gt.warn { color: var(--amber); } .lt-grp > .gt.gold { color: var(--gold); }
+.lt-grp > .gt small { font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--ink-3); }
+.lt-ck { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 6px; cursor: pointer; background: var(--card-2); transition: border-color .15s, opacity .15s; }
+.lt-ck:hover { border-color: var(--brand); }
+.lt-ck input { margin-top: 3px; width: 16px; height: 16px; accent-color: var(--brand); flex: 0 0 auto; }
+.lt-ck .t { flex: 1; min-width: 0; }
+.lt-ck .t b { font-size: 13.5px; }
+.lt-ck .t small { display: block; color: var(--ink-3); font-size: 12px; line-height: 1.35; }
+.lt-ck.done { opacity: .55; }
+.lt-ck.done b { text-decoration: line-through; }
+.lt-more { font-size: 12px; color: var(--brand); background: none; border: 0; cursor: pointer; padding: 2px 0; font-weight: 600; }
+
+.lt-brief { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.lt-b { border: 1px solid var(--line); border-radius: 12px; padding: 11px 12px; background: var(--card-2); }
+.lt-b.warn { border-color: color-mix(in srgb, var(--amber) 45%, var(--line)); }
+.lt-b.ok { border-color: color-mix(in srgb, var(--brand) 40%, var(--line)); }
+.lt-b h4 { margin: 0 0 4px; font-size: 13px; display: flex; gap: 7px; align-items: baseline; line-height: 1.3; }
+.lt-b p { margin: 0; font-size: 12.5px; color: var(--ink-2); line-height: 1.45; }
+.lt-audit { display: flex; flex-direction: column; gap: 6px; }
+.lt-audit .a { display: flex; gap: 8px; font-size: 12.8px; line-height: 1.4; padding: 8px 10px; border-radius: 10px; background: var(--card-2); border: 1px solid var(--line); }
+.lt-audit .a.bad { background: var(--red-soft); border-color: transparent; }
+.lt-audit .a.warn { background: var(--amber-soft); border-color: transparent; }
+.lt-audit .a.ok { background: var(--brand-soft); border-color: transparent; }
+.lt-coach { display: grid; grid-template-columns: 120px 1fr 34px; gap: 10px; align-items: center; font-size: 12.5px; margin-bottom: 7px; }
+.lt-coach .bar { height: 7px; border-radius: 9px; background: var(--bg-2); overflow: hidden; }
+.lt-coach .bar i { display: block; height: 100%; background: var(--brand); border-radius: 9px; }
+.lt-coach .bar i.w { background: var(--amber); }
+.lt-coach small { color: var(--ink-3); display: block; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lt-coach .num { text-align: right; font-weight: 700; }
+
+@media (max-width: 1100px) {
+  .lt-cols { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .lt-brief { grid-template-columns: 1fr; }
+}
+@media print {
+  .side, .top, .statbar, .lt-noprint { display: none !important; }
+  .lt-grid { overflow: visible; }
+}
+
+/* Tab Latihan: Tim Utama / Junior / Individu */
+.lt-tabs { display: inline-flex; gap: 3px; padding: 3px; margin-bottom: 10px; border-radius: 12px; background: var(--card); border: 1px solid var(--line); }
+.lt-tabs button { border: 0; background: none; padding: 7px 14px; border-radius: 9px; font-weight: 700; font-size: 13px; color: var(--ink-2); cursor: pointer; }
+.lt-tabs button.on { background: var(--brand); color: #fff; }
+:root[data-theme="dark"] .lt-tabs button.on { color: #04110a; }
+.lt-prio { display: block; height: 4px; border-radius: 9px; background: var(--bg-2); margin-top: 4px; overflow: hidden; min-width: 40px; }
+.lt-prio i { display: block; height: 100%; background: var(--brand); }
+.lt-notes { font-size: 12px; color: var(--ink-2); line-height: 1.4; max-width: 340px; }
+.lt-factors { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+.lt-factors > div { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--card-2); display: flex; flex-direction: column; gap: 2px; font-size: 12.5px; }
+.lt-factors > div b { font-size: 11px; letter-spacing: .5px; text-transform: uppercase; color: var(--ink-3); }
+.lt-factors > div.warn { border-color: color-mix(in srgb, var(--amber) 50%, var(--line)); }
+.lt-mini-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.lt-mini-week > div { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.lt-mini-week > div > b { font-size: 11px; text-transform: uppercase; color: var(--ink-3); text-align: center; }
+.lt-mini-week .lt-s { padding: 4px 5px; }
+.lt-mini-week .lt-s .sn { font-size: 10.5px; font-weight: 600; line-height: 1.2; display: block; }
+@media (max-width: 900px) { .lt-mini-week { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
