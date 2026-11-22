@@ -954,6 +954,25 @@ $('#scrim').onclick = () => hideDrawer();
 
 // ---------- Pusat Cheat (langsung ke memori FM27) ----------
 let LISTS = null;
+// Terapkan fokus latihan ke FM. Bila plugin belum punya "contoh" event ganti-fokus di sesi FM ini, pengguna diminta
+// mengganti fokus satu pemain di FM; Asisten menunggu sampai contoh itu tertangkap lalu melanjutkan otomatis.
+async function applyFocusFM(payload) {
+  let r = await post('/api/latihan/terapkan-individu', payload);
+  if (r.ok || !r.needTemplate) return r;
+  const ov = document.createElement('div'); ov.className = 'modal-bg'; ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:9999';
+  ov.innerHTML = '<div class="card" style="max-width:520px;padding:22px 24px"><h3 style="margin-top:0">🎯 Satu langkah di FM dulu</h3><p style="line-height:1.6">Setiap kali FM dibuka, Asisten perlu melihat <b>satu kali</b> cara FM mengganti fokus latihan.</p><ol style="line-height:1.8;margin:0 0 12px 18px"><li>Buka FM → profil <b>pemain mana saja</b> di klub Anda</li><li>Tab <b>Latihan</b> → ganti <b>Fokus Tambahan</b> (pilihan apa pun)</li></ol><p class="muted" id="afWait" style="margin:0 0 14px">⏳ Menunggu… Asisten akan melanjutkan sendiri.</p><button class="btn" id="afCancel">Batal</button></div>';
+  document.body.appendChild(ov); let stop = false; ov.querySelector('#afCancel').onclick = () => { stop = true; };
+  const t0 = Date.now();
+  try {
+    while (!stop && Date.now() - t0 < 300000) {
+      await new Promise(z => setTimeout(z, 2500)); if (stop) break;
+      let c; try { c = await api('/api/jembatan/punya?id=1280659764'); } catch { continue; }
+      if (c.error && !c.ok) { ov.querySelector('#afWait').textContent = '⚠️ ' + c.error; continue; }
+      if (c.punya) { ov.querySelector('#afWait').textContent = '✓ Tertangkap! Menerapkan ke semua pemain…'; r = await post('/api/latihan/terapkan-individu', payload); return r; }
+    }
+    return { ok: false, error: stop ? 'Dibatalkan' : 'Waktu habis (5 menit) — coba lagi setelah mengganti fokus satu pemain di FM.' };
+  } finally { ov.remove(); }
+}
 async function runCheat(action, scope, params, confirmTxt) {
   const sc = await api('/api/cheat/scope?' + new URLSearchParams(Object.entries(scope).filter(([, v]) => v !== '' && v != null)));
   if (!sc.count) { toast('Cakupan kosong'); return null; }
@@ -1312,7 +1331,7 @@ async function pLatihan(page) {
       if (!await ask({ icon: '✅', title: 'Terapkan latihan tim ke FM?', ok: 'Terapkan', body: '<p><b>Sekarang:</b> Fokus Tambahan individu seluruh <b>skuad senior</b> dipasang di FM sesuai rekomendasi (kiper & regen dilewati).</p><p><b>Jadwal mingguan tim:</b> belum bisa dipasang otomatis — Asisten perlu satu rekaman <b>membuat jadwal custom</b> di FM (Latihan → Jadwal → buat baru → isi sesi → simpan). Sampai itu ada, atur sesi minggu ini memakai tombol 📋 Salin jadwal.</p><p class="muted">Simpan game di FM agar permanen.</p>' })) return;
       const btn = $('#ltApplyTim'); btn.disabled = true; btn.textContent = 'Menerapkan…';
       try {
-        const r = await post('/api/latihan/terapkan-individu', { team: 'senior' });
+        const r = await applyFocusFM({ team: 'senior' });
         if (!r.ok) toast('Gagal: ' + r.error); else toast(`✓ Fokus ${r.applied} pemain senior diterapkan ke FM${r.failed ? ` · ${r.failed} gagal` : ''} · jadwal tim: menunggu rekaman jadwal custom`);
       } catch (e) { toast('Gagal: ' + e.message); }
       btn.disabled = false; btn.textContent = '✅ Terapkan ke FM';
@@ -1366,7 +1385,7 @@ async function pLatihanIndividu(page, tab) {
       if (!await ask({ icon: '🎯', title: 'Terapkan fokus latihan ke FM?', body: `<p>Fokus Tambahan <b>${list.length} pemain</b> akan diganti langsung di FM sesuai rekomendasi Asisten.</p><p class="muted">Intensitas & peran belum diubah. Simpan game di FM agar permanen. Kiper & regen dilewati.</p>`, ok: 'Terapkan' })) return;
       const btn = $('#ltApply'); btn.disabled = true; btn.textContent = 'Menerapkan…';
       try {
-        const r = await post('/api/latihan/terapkan-individu', { ids: list.map(x => x.id) });
+        const r = await applyFocusFM({ ids: list.map(x => x.id) });
         if (!r.ok) toast('Gagal: ' + r.error); else toast(`✓ Fokus ${r.applied} pemain diterapkan ke FM${r.failed ? ` · ${r.failed} gagal` : ''}${r.skipped && r.skipped.length ? ` · ${r.skipped.length} dilewati` : ''}`);
       } catch (e) { toast('Gagal: ' + e.message); }
       route();

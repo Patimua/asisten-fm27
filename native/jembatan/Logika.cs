@@ -16,7 +16,7 @@ using SI.Core;
 
 public static class Logika
 {
-    public static string Versi = "1.2";
+    public static string Versi = "1.3";
     const uint PERS = 1348825715; // kode tipe "Pers" di referensi
     const uint GUID = 1198877028; // kode sesi game (berubah tiap save dimuat)
     static int lastGuid = -1;
@@ -110,6 +110,7 @@ public static class Logika
         string op = parts[0];
         if (op == "ping") return "ping versi " + Versi + " · cetakan: " + tpl.Count + " · sesi " + lastGuid;
         uint id = uint.Parse(parts[1]);
+        if (op == "punya") { Tpl q; return "punya " + id + " " + (!tpl.TryGetValue(id, out q) ? "tidak" : q.Guid == lastGuid ? "ya" : "lain"); } // cek cetakan tanpa melempar galat
         Tpl t; if (!tpl.TryGetValue(id, out t)) throw new Exception("belum ada cetakan untuk event " + id + " — lakukan sekali secara manual di FM");
         if (t.Guid != lastGuid) throw new Exception("cetakan dari save/sesi lain — belum ada cetakan untuk event " + id + " di save ini; lakukan sekali secara manual di FM");
         if (op == "dump") { var sb = new StringBuilder(); Dump(t.Data, 0, sb); return t.Name + " ke=" + t.Ident + " data=" + sb; }

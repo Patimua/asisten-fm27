@@ -2,6 +2,11 @@
 
 Format versi: `27.1.x` = untuk **Football Manager 27 versi 27.1**, build Asisten ke-x.
 
+## 27.1.18 — 23 Nov 2026
+- **Latihan → Terapkan ke FM tidak lagi berhenti dengan error "FM belum punya contoh perintah".** Bila FM baru dibuka, Asisten menampilkan langkah singkat (ganti Fokus Tambahan satu pemain di FM), menunggu, lalu **melanjutkan sendiri** ke semua pemain begitu FM merekamnya.
+- Perbaikan: hasil dari plugin Jembatan kadang terbaca kosong (berkas berisi karakter non-ASCII), sehingga jumlah pemain yang berhasil diterapkan bisa salah.
+- Plugin Jembatan: logika 1.3 (dimuat otomatis tanpa menutup FM).
+
 ## 27.1.17 — 23 Nov 2026
 - **Baru — angka CA/PA langsung di tabel pemain FM** (skuad, U20/U18, pemilihan tim, pencarian…). Angkanya ditempel rata kanan di ujung kolom Posisi. Asisten membaca nama di layar dengan OCR bawaan Windows (kolom.exe), termasuk nama singkat seperti "N. Noll". Saat layar pertandingan, pemeriksaan dijarangkan supaya FM tetap ringan.
 - **Baru — 🇪🇺 Lolos aturan non-UE:** pemain diberi kewarganegaraan kedua sesuai negara liga klub Anda (mis. Italia untuk Serie A), jadi tidak lagi memakai slot non-UE / pemain asing. Tombolnya ada di Pusat Cheat → Izin & Klausul dan di profil pemain. Bisa dibatalkan di Riwayat.

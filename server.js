@@ -450,7 +450,7 @@ async function jembatan(lines) {
     await new Promise(r => setTimeout(r, 200));
     if (!fs.existsSync(path.join(JB_DIR, 'perintah.txt')) && fs.existsSync(hf) && fs.statSync(hf).size > before) {
       await new Promise(r => setTimeout(r, 150));
-      return { ok: true, hasil: fs.readFileSync(hf, 'utf8').slice(before).trim() };
+      return { ok: true, hasil: fs.readFileSync(hf).subarray(before).toString('utf8').trim() }; // potong per BYTE (berkas berisi karakter non-ASCII)
     }
   }
   return { ok: false, error: 'FM tidak menjawab — pastikan FM terbuka dengan save dimuat dan plugin Jembatan v0.2 aktif (tutup-buka FM sekali).' };
@@ -733,6 +733,8 @@ const server = http.createServer(async (req, res) => {
       if (req.method === 'POST') { const b = await body(req); const lines = (b.lines || []).map(String).filter(Boolean).slice(0, 200); if (!lines.length) return send(res, 400, { error: 'tidak ada perintah' }); return send(res, 200, await jembatan(lines)); }
       return send(res, 200, { status: jembatanStatus() });
     }
+    // Cetakan event di plugin Jembatan sudah ada untuk save ini? (dipakai UI untuk menunggu pengguna mengganti fokus sekali)
+    if (p === '/api/jembatan/punya') { const r = await jembatan(['punya ' + Number(q.id || 1280659764)]); const m = r.ok && r.hasil.match(/punya [0-9]+ (ya|tidak|lain)/); return send(res, 200, { ok: !!m, punya: m ? m[1] === 'ya' : false, status: m ? m[1] : null, error: r.ok ? (m ? null : 'Plugin Jembatan perlu diperbarui (versi logika 1.3)') : r.error }); }
     if (p === '/api/latihan/terapkan-individu' && req.method === 'POST') {
       // Pasang "Fokus Tambahan" rekomendasi ke FM lewat plugin Jembatan (memutar ulang event ganti-fokus FM sendiri)
       const b = await body(req); const ids = Array.isArray(b.ids) && b.ids.length ? new Set(b.ids.map(Number)) : null;
@@ -744,7 +746,7 @@ const server = http.createServer(async (req, res) => {
       const r = await jembatan(ok.map(x => `replay 1280659764 pers=${x.pers} set=1916366157/1886680684:n:${x.fmFocus.id};1916366157/1903577654:s:${x.fmFocus.name}`));
       if (!r.ok) return send(res, 200, { ok: false, error: r.error, skipped });
       const lines = r.hasil.split('\n').filter(l => /^(OK replay|GAGAL)/.test(l)), fail = lines.filter(l => l.startsWith('GAGAL'));
-      if (fail.length && /belum ada cetakan/.test(fail[0])) return send(res, 200, { ok: false, error: 'FM belum punya contoh perintah ganti fokus di sesi ini. Di FM: buka profil satu pemain → Latihan → ganti Fokus Tambahan sekali, lalu coba lagi.', skipped });
+      if (fail.length && /belum ada cetakan/.test(fail[0])) return send(res, 200, { ok: false, needTemplate: true, error: 'FM belum punya contoh perintah ganti fokus di sesi ini. Di FM: buka profil satu pemain → Latihan → ganti Fokus Tambahan sekali.', skipped });
       const log = readJSON(cfile('fokus-diterapkan.json'), {}); const at = new Date().toISOString();
       ok.forEach((x, i) => { if (lines[i] && lines[i].startsWith('OK')) log[x.id] = { id: x.fmFocus.id, name: x.fmFocus.name, at }; });
       fs.writeFileSync(cfile('fokus-diterapkan.json'), JSON.stringify(log));
