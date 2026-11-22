@@ -4,6 +4,14 @@
 Set sh = CreateObject("WScript.Shell")
 Set fso = CreateObject("Scripting.FileSystemObject")
 dir = fso.GetParentFolderName(WScript.ScriptFullName)
+
+' Versi baru: native\pengawas.exe juga menangkap Teknik Oda yang dibuka lagi dari tray. Bila ada, serahkan ke sana.
+exe = dir & "\native\pengawas.exe"
+If fso.FileExists(exe) Then
+  sh.Run """" & exe & """", 0, False
+  WScript.Quit
+End If
+
 Set wmi = GetObject("winmgmts:\\.\root\cimv2")
 
 ' Cukup satu pengawas yang berjalan

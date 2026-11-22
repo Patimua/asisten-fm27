@@ -109,7 +109,7 @@ static class Installer
     public static void StopRunning(string dir)
     {
         try { var rq = (HttpWebRequest)WebRequest.Create("http://127.0.0.1:2728/api/shutdown"); rq.Method = "POST"; rq.Timeout = 2500; rq.ContentLength = 0; rq.Proxy = null; using (rq.GetResponse()) { } } catch { }
-        foreach (var n in new[] { "capa", "balon" }) foreach (var p in Process.GetProcessesByName(n)) { try { p.Kill(); } catch { } }
+        foreach (var n in new[] { "capa", "balon", "kolom", "pengawas", "fokus" }) foreach (var p in Process.GetProcessesByName(n)) { try { p.Kill(); } catch { } }
         try
         {
             var dl = dir.ToLowerInvariant();

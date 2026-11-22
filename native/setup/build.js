@@ -17,7 +17,7 @@ const ROOT_FILES = ['Asisten FM27 - FM 27.1.vbs', 'Pengawas Teknik Oda.vbs', 'as
 for (const f of ROOT_FILES) fs.copyFileSync(path.join(SRC, f), path.join(STAGE, f));
 const copyDir = (d, filter) => { for (const f of fs.readdirSync(path.join(SRC, d), { withFileTypes: true })) { const rel = path.join(d, f.name), full = path.join(SRC, rel); if (SKIP.test(full)) continue; if (f.isDirectory()) copyDir(rel, filter); else if (!filter || filter(f.name)) { fs.mkdirSync(path.join(STAGE, d), { recursive: true }); fs.copyFileSync(full, path.join(STAGE, rel)); } } };
 copyDir('lib'); copyDir('public');
-copyDir('native', n => /^(balon|capa|fmmem|fokus)\.(cs|exe)$/i.test(n));
+copyDir('native', n => /^(balon|capa|fmmem|fokus|pengawas|kolom)\.(cs|exe)$/i.test(n));
 // versi di BACA-SAYA.txt
 const bs = path.join(STAGE, 'BACA-SAYA.txt'); fs.writeFileSync(bs, fs.readFileSync(bs, 'utf8').replace(/v27\.\d+\.\d+/, 'v' + VER));
 

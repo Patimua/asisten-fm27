@@ -2,6 +2,27 @@
 
 Format versi: `27.1.x` = untuk **Football Manager 27 versi 27.1**, build Asisten ke-x.
 
+## 27.1.17 — 23 Nov 2026
+- **Baru — angka CA/PA langsung di tabel pemain FM** (skuad, U20/U18, pemilihan tim, pencarian…). Angkanya ditempel rata kanan di ujung kolom Posisi. Asisten membaca nama di layar dengan OCR bawaan Windows (kolom.exe), termasuk nama singkat seperti "N. Noll". Saat layar pertandingan, pemeriksaan dijarangkan supaya FM tetap ringan.
+- **Baru — 🇪🇺 Lolos aturan non-UE:** pemain diberi kewarganegaraan kedua sesuai negara liga klub Anda (mis. Italia untuk Serie A), jadi tidak lagi memakai slot non-UE / pemain asing. Tombolnya ada di Pusat Cheat → Izin & Klausul dan di profil pemain. Bisa dibatalkan di Riwayat.
+- Tombol klausul rilis di profil pemain kini memakai nilai yang Anda pilih (mulai £1).
+
+## 27.1.16 — 23 Nov 2026
+- **Perbaikan: membuka Teknik Oda kini selalu ikut membuka Asisten**, juga bila Teknik Oda sudah berjalan di tray lalu dibuka lagi. Sebelumnya pembukaan ulang itu hanya berlangsung ±0,4 detik sehingga terlewat. Pengawas baru (pengawas.exe) hanya membuka Asisten bila jendelanya belum ada.
+- Label **"Buka di FM manual"** tidak lagi muncul hanya karena FM sedang sibuk beberapa detik (sering terjadi di database besar). Arahkan kursor ke label untuk melihat alasannya.
+- Database raksasa diuji ulang: 524 ribu pemain (dump 757 MB) terbaca tanpa error *"Cannot create a string longer than 0x1fffffe8"*. Bila error ini masih muncul, perbarui ke versi ini.
+
+## 27.1.15 — 22 Nov 2026
+- **Perbaikan penting — regen tiba-tiba PA 200:** Youth Intake otomatis bisa terbawa ke save lain dan, setelah game baru/save lain dimuat, menganggap *semua* regen sebagai "pemain intake" lalu menaikkan PA-nya.
+  - Pengaturan youth intake kini terikat ke karier masing-masing (klub harus cocok).
+  - Muat save lain / tanggal game mundur = daftar pemain dihitung ulang, tidak ada yang ditulis.
+  - Ribuan "pemain baru" sekaligus dianggap pergantian save dan diabaikan.
+  - Label kuning di header selama Youth Intake aktif, dan konfirmasi merah untuk cakupan di luar klub sendiri.
+- **Baru — ⭐ Klub Superstar:** naikkan reputasi klub Anda (bisa dibatalkan) supaya pemain top mau bergabung walau klub Anda kecil.
+- **Klub Menerima Tawaran:** nilai klausul rilis bisa dipilih mulai £1. Nilai yang dipilih dipakai juga di profil pemain dan Target Transfer.
+- **Badge CA/PA di profil FM muncul lagi** di layar resolusi tinggi / skala Windows 125%+ (tombol Teknik Oda sebelumnya dianggap terlalu kecil).
+- Ruang Manajer & Latihan: tidak lagi menampilkan data karier lama saat Anda menganggur / memulai game baru.
+
 ## 27.1.14 — 22 Nov 2026
 - **Installer baru** (`Setup Asisten FM27.exe`):
   - Memasang ke `%LOCALAPPDATA%\Programs\Asisten FM27` (bisa diganti) dan membuat shortcut di Desktop + Start Menu.

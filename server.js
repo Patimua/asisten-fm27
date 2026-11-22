@@ -142,6 +142,41 @@ loadDump();
 setInterval(loadDump, 15000);
 
 const myClub = () => cfg.club || (DB.meta && DB.meta.myClub) || '';
+// Pencocokan nama hasil OCR (kolom.exe) → pemain: tanpa aksen/huruf kecil, toleran 1–2 salah huruf; klub saya diutamakan
+let KOLOM = { key: null, map: new Map(), byLast: new Map() };
+const kNorm = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+function kDist(a, b, max) {
+  if (Math.abs(a.length - b.length) > max) return max + 1;
+  let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) { const cur = [i]; let lo = i; for (let j = 1; j <= b.length; j++) { cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); lo = Math.min(lo, cur[j]); } if (lo > max) return max + 1; prev = cur; }
+  return prev[b.length];
+}
+function kolomMatch(raw) {
+  if (KOLOM.key !== DB.mtime) {
+    const map = new Map(), byLast = new Map();
+    for (const p of DB.players) { if (!p.name || p.noName) continue; const k = kNorm(p.name); (map.get(k) || map.set(k, []).get(k)).push(p); const l = k.split(' ').pop(); (byLast.get(l) || byLast.set(l, []).get(l)).push(p); }
+    KOLOM = { key: DB.mtime, map, byLast, cache: new Map() };
+  }
+  const n = kNorm(raw.replace(/^\W+/, '').replace(/^[A-Za-z]\s+(?=[A-Z])/, '')); if (n.length < 3) return null;
+  if (KOLOM.cache.has(n)) return KOLOM.cache.get(n);
+  const me = myClub(); const best = l => l && l.length ? (l.find(p => p.club === me) || l.slice().sort((a, b) => b.ca - a.ca)[0]) : null;
+  let r = best(KOLOM.map.get(n));
+  const ab = !r && raw.match(/^\s*\W*([A-Za-zÀ-ÿ])\.\s*(.+)$/); // nama singkat FM: "N. Noll", "K. Sildillia"
+  if (ab) {
+    const ini = kNorm(ab[1]), rest = kNorm(ab[2]), last = rest.split(' ').pop();
+    const pool = [...(KOLOM.byLast.get(last) || []), ...DB.players.filter(p => p.club === me)];
+    const hit = pool.filter(p => { const k = kNorm(p.name); return k.startsWith(ini) && (k.endsWith(' ' + rest) || kDist(k.slice(k.length - rest.length), rest, 1) <= 1 && k.endsWith(last.slice(-3))); });
+    r = best(hit);
+  }
+  if (!r) { // salah baca OCR: cari nama dengan jarak edit kecil, mulai dari pemain bernama belakang sama, lalu klub saya
+    const max = n.length > 12 ? 2 : 1; let cand = [];
+    const pool = [...(KOLOM.byLast.get(n.split(' ').pop()) || []), ...DB.players.filter(p => p.club === me)];
+    for (const p of pool) { const d = kDist(n, kNorm(p.name), max); if (d <= max) cand.push([d, p]); }
+    if (!cand.length && n.split(' ').length > 1) { const first = n.split(' ')[0]; for (const [k, l] of KOLOM.map) if (k.startsWith(first + ' ')) { const d = kDist(n, k, max); if (d <= max) for (const p of l) cand.push([d, p]); } }
+    cand.sort((a, b) => a[0] - b[0] || (b[1].club === me) - (a[1].club === me)); r = cand.length ? cand[0][1] : null;
+  }
+  const out = r ? { ca: r.ca, pa: r.pa } : null; KOLOM.cache.set(n, out); return out;
+}
 
 // ---------------- Status pembaca Teknik Oda + youth intake ----------------
 const { youthInfo } = require('./lib/youthdates');
@@ -201,7 +236,13 @@ function youthNotifyTick() {
 // Badge CA/PA di atas profil pemain FM (native/capa.exe; satu instance, keluar sendiri bila server mati).
 // Badge CA/PA (capa.exe, satu salinan): salinan lama dihentikan dulu supaya yang berjalan selalu baru (salinan lama bisa
 // macet setelah FM ditutup-buka berkali-kali). Salinan baru juga dijalankan ulang otomatis bila keluar.
-function startCapa() { const exe = path.join(__dirname, 'native', 'capa.exe'); if (!fs.existsSync(exe)) return; try { require('child_process').execFileSync('taskkill', ['/F', '/IM', 'capa.exe'], { stdio: 'ignore', windowsHide: true }); } catch { } setTimeout(() => { try { require('child_process').spawn(exe, ['http://localhost:' + PORT].concat(fs.existsSync(path.join(DATA_DIR, 'capa-debug')) ? ['debug'] : []), { detached: true, stdio: 'ignore' }).unref(); } catch (e) { logLine('WARN', 'capa: ' + e.message); } }, 800); }
+function startCapa() {
+  for (const nm of ['capa', 'kolom']) { // capa = badge di profil; kolom = angka CA/PA di tabel pemain FM
+    const exe = path.join(__dirname, 'native', nm + '.exe'); if (!fs.existsSync(exe)) continue;
+    try { require('child_process').execFileSync('taskkill', ['/F', '/IM', nm + '.exe'], { stdio: 'ignore', windowsHide: true }); } catch { }
+    setTimeout(() => { try { require('child_process').spawn(exe, ['http://localhost:' + PORT].concat(fs.existsSync(path.join(DATA_DIR, 'capa-debug')) ? ['debug'] : []), { detached: true, stdio: 'ignore' }).unref(); } catch (e) { logLine('WARN', nm + ': ' + e.message); } }, 800);
+  }
+}
 if (PORT === 2728) setTimeout(startCapa, 3000);
 // Bawa jendela FM ke depan (setelah "Buka di FM") supaya tidak perlu pindah manual
 function focusFM(delay) { const exe = path.join(__dirname, 'native', 'fokus.exe'); if (!fs.existsSync(exe)) return; try { require('child_process').spawn(exe, [String(delay || 0)], { detached: true, stdio: 'ignore' }).unref(); } catch (e) { logLine('WARN', 'fokus: ' + e.message); } }
@@ -557,7 +598,7 @@ function youthLabel(sc) { const t = sc.type || 'myclub'; return t === 'all' ? 'S
 setTimeout(() => CH.index().catch(() => {}), 1500); // panaskan indeks memori supaya profil pertama langsung cepat
 setInterval(async () => {
   if (youthBusy || VS.locked()) return; youthBusy = true;
-  try { const r = await CH.youthTick(youthGroups); if (r) YOUTH_LAST = { at: Date.now(), ...r }; }
+  try { const r = await CH.youthTick(youthGroups, careerKey()); if (r) YOUTH_LAST = { at: Date.now(), ...r }; }
   catch (e) { YOUTH_LAST = { at: Date.now(), error: e.message }; }
   try { const c = CH.youthCfg(); if (c.active) { const r = await CH.youthBoost(youthCands(c.scope || {}), false, youthCands(c.scope || {}, true)); if (r && r.mine) { YOUTH_LAST = { at: Date.now(), kandidat: true, ...r }; logLine('INFO', `youth kandidat: ${r.mine} pemain dinaikkan PA`); } } }
   catch (e) { YOUTH_LAST = { at: Date.now(), error: 'kandidat: ' + e.message }; }
@@ -589,7 +630,7 @@ function odaPlugin() {
   if (!fs.existsSync(kalp)) return { ok: false, why: 'Plugin dalam-game Teknik Oda belum terpasang' };
   const age = (Date.now() - fs.statSync(kalp).mtimeMs) / 1000;
   let game = ''; try { game = JSON.parse(fs.readFileSync(kalp, 'utf8')).oyun || ''; } catch {}
-  if (age > 20) return { ok: false, why: 'Plugin Teknik Oda tidak aktif di FM yang sedang berjalan', game };
+  if (age > 90) return { ok: false, why: 'Plugin dalam-game Teknik Oda tidak memberi sinyal sejak ' + Math.round(age) + ' dtk — FM sedang sibuk/tertutup, atau plugin Teknik Oda di FM belum aktif (Teknik Oda → Settings → Cards inside FM). Profil tetap bisa dibuka: FM difokuskan, lalu cari pemainnya manual.', game };
   if (game && !/^27./.test(game)) return { ok: false, why: 'Plugin Teknik Oda berjalan di FM ' + game + ', bukan FM27', game };
   return { ok: true, game };
 }
@@ -643,6 +684,11 @@ const server = http.createServer(async (req, res) => {
         paths: Object.fromEntries(Object.keys(DEFAULTS).filter(k => k !== 'club').map(k => [k, { value: cfg[k], exists: fs.existsSync(cfg[k]) }])) });
     }
     if (p === '/api/shutdown' && req.method === 'POST') { send(res, 200, { ok: true }); setTimeout(() => process.exit(0), 200); return; }
+    // Kolom CA/PA di tabel FM (native/kolom.exe): nama hasil OCR → "ca pa" per baris ("-" bila tidak dikenali)
+    if (p === '/api/kolom' && req.method === 'POST') {
+      const b = await body(req); const names = Array.isArray(b.names) ? b.names.slice(0, 200) : [];
+      return send(res, 200, { rows: names.map(n => { const x = kolomMatch(String(n || ''), b.pos); return x ? x.ca + ' ' + x.pa : '-'; }) });
+    }
     if (p === '/api/fmopen') {
       const o = fmOpen() || { found: false };
       if (o.found && !o.staff) {
@@ -802,7 +848,7 @@ const server = http.createServer(async (req, res) => {
         groups: E.STAFF_GROUPS.map(([g, keys]) => ({ g, items: keys.filter(k => s.staffAttrs && k in s.staffAttrs).map(k => ({ k, label: E.STAFF_LABEL[k] || k, v: s.staffAttrs[k] })) })),
         fits: E.STAFF_ROLES.map(r => ({ name: r.name, ...E.staffScore(s, r) })).sort((a, b) => b.score - a.score) });
     }
-    if (p === '/api/cheats') return send(res, 200, parseCT());
+    if (p === '/api/cheats') { try { return send(res, 200, parseCT()); } catch { return send(res, 200, []); } } // sisa Cheat Table lama (tidak dipakai UI)
     // ---------- Cheat FM27 langsung ke memori ----------
     if (p === '/api/lists') {
       const cnt = f => { const m = {}; DB.players.forEach(x => [].concat(f(x)).forEach(k => k && (m[k] = (m[k] || 0) + 1))); return Object.entries(m).sort((a, b) => b[1] - a[1]).map(([k, n]) => ({ k, n })); };
@@ -882,6 +928,14 @@ const server = http.createServer(async (req, res) => {
       else if (a === 'finance') r = await CH.finance(uids, P.op, Number(P.value || 0));
       else if (a === 'board') r = await CH.boardComplete(DB.players.filter(p => p.club === myClub()).map(p => p.id));
       else if (a === 'know') r = await CH.knowledgeMax(DB.staff.filter(x => x.club === myClub()).map(x => x.id), DB.players.filter(p => p.club === myClub()).map(p => p.id));
+      else if (a === 'citizen') { // kewarganegaraan kedua; default = negara terbanyak di klub saya (mis. Italia untuk klub Serie A)
+        const cnt = {}; DB.players.filter(p => p.club === myClub() && p.nat && p.nat[0]).forEach(p => cnt[p.nat[0]] = (cnt[p.nat[0]] || 0) + 1);
+        const natName = P.nat || Object.entries(cnt).sort((x, y) => y[1] - x[1])[0]?.[0];
+        const ref = DB.players.find(p => p.nat && p.nat[0] === natName && p.id < 2000000000) || DB.players.find(p => p.nat && p.nat[0] === natName); // nat[0] = kewarganegaraan utama
+        if (!ref) return send(res, 400, { error: 'Negara ' + natName + ' tidak ditemukan' });
+        r = { ...(await CH.citizenship(uids, ref.id)), nat: natName };
+      }
+      else if (a === 'rep') r = await CH.teamRep(DB.players.filter(p => p.club === myClub()).map(p => p.id), Number(P.value || 9999));
       else if (a === 'love') r = await CH.managerLove(uids, DB.players.filter(p => p.club === myClub()).map(p => p.id));
       else if (a === 'legend') { const x = people[0]; r = await CH.legendApply(x.id, P.legend, { ...P, name: x.name, age: P.age || x.age }); }
       else if (a === 'register') r = await CH.register(uids, (Array.isArray(P.codes) ? P.codes : [8]).map(Number).filter(c => [0, 8, 19].includes(c)));

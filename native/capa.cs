@@ -1,7 +1,7 @@
-// capa — tombol CA/PA bergaya Teknik Oda, ditempel tepat di kanan tombol "Teknik Oda · Compare" di profil pemain FM27.
+﻿// capa â€” tombol CA/PA bergaya Teknik Oda, ditempel tepat di kanan tombol "Teknik Oda Â· Compare" di profil pemain FM27.
 // Data: GET <server>/api/fmopen (Asisten FM27, memakai acik-oyuncu.json dari plugin Teknik Oda).
-// Posisi: isi jendela FM ditangkap (PrintWindow) ±1,5×/dtk saat FM aktif; bingkai oranye tombol Teknik Oda dicari di area kepala profil.
-// Tidak ada tombol Teknik Oda (bukan layar profil) → badge disembunyikan. Klik kanan = sembunyikan sampai pemain berganti.
+// Posisi: isi jendela FM ditangkap (PrintWindow) Â±1,5Ã—/dtk saat FM aktif; bingkai oranye tombol Teknik Oda dicari di area kepala profil.
+// Tidak ada tombol Teknik Oda (bukan layar profil) â†’ badge disembunyikan. Klik kanan = sembunyikan sampai pemain berganti.
 // Pakai: capa.exe [http://localhost:2728]
 using System;
 using System.Diagnostics;
@@ -32,7 +32,7 @@ class Capa : Form {
   protected override CreateParams CreateParams { get { var c = base.CreateParams; c.ExStyle |= 0x08000000 | 0x00000080 | 0x00000008; return c; } }
 
   Capa(string s) {
-    srv = s.TrimEnd('/').Replace("//localhost", "//127.0.0.1"); // "localhost" → coba IPv6 dulu, lambat >1,5 dtk
+    srv = s.TrimEnd('/').Replace("//localhost", "//127.0.0.1"); // "localhost" â†’ coba IPv6 dulu, lambat >1,5 dtk
     FormBorderStyle = FormBorderStyle.None; ShowInTaskbar = false; TopMost = true; StartPosition = FormStartPosition.Manual;
     BackColor = BG; DoubleBuffered = true; Location = new Point(-3000, -3000); Size = new Size(180, 38);
     MouseDown += (o, e) => { if (e.Button == MouseButtons.Right) { hiddenKey = lastKey; Hide(); } };
@@ -64,7 +64,7 @@ class Capa : Form {
         int stride = bd.Stride; var buf = new byte[stride * h]; Marshal.Copy(bd.Scan0, buf, 0, buf.Length);
         Func<int, int, bool> or = (x, y) => { int i = y * stride + x * 4; int b = buf[i], gg = buf[i + 1], r = buf[i + 2]; return r > 170 && gg > 85 && gg < 150 && b < 50; };
         Func<int, int, bool> dark = (x, y) => { int i = y * stride + x * 4; return buf[i] < 20 && buf[i + 1] < 20 && buf[i + 2] < 20; };
-        int bestX = -1, bestT = 0, bestB = 0, minRun = Math.Max(18, h / 50);
+        int bestX = -1, bestT = 0, bestB = 0, minRun = Math.Max(14, h / 80);
         for (int x = x1; x >= x0; x--) {
           int run = 0, top = 0;
           for (int y = y0; y <= y1; y++) {
@@ -73,7 +73,7 @@ class Capa : Form {
           }
           if (bestX >= 0) break;
         }
-        if (bestX < 0) return Rectangle.Empty;
+        if (bestX < 0) { if (DEBUG && (DateTime.Now - lastSnap).TotalSeconds > 8) { lastSnap = DateTime.Now; try { bmp.Save(Path.Combine(Path.GetDirectoryName(Application.ExecutablePath), "capa-snap.png")); Dbg("snap " + w + "x" + h); } catch { } } return Rectangle.Empty; }
         return new Rectangle(win.Left + bestX, win.Top + bestT - 2, 1, bestB - bestT + 4); // tepi kanan tombol Compare
       } finally { bmp.UnlockBits(bd); }
     }
@@ -104,6 +104,7 @@ class Capa : Form {
       if (!Visible) { Show(); TopMost = true; }
     } else if (Visible) Hide();
   }
+  static DateTime lastSnap = DateTime.MinValue;
   static readonly bool DEBUG = Environment.GetCommandLineArgs().Length > 2 && Environment.GetCommandLineArgs()[2] == "debug";
   static void Dbg(string s) { if (!DEBUG) return; try { File.AppendAllText(Path.Combine(Path.GetDirectoryName(Application.ExecutablePath), "capa.log"), DateTime.Now.ToString("HH:mm:ss.fff ") + s + "\r\n"); } catch { } }
   void Shape() { using (var gp = Round(new Rectangle(0, 0, Width, Height), Math.Max(6, Height / 5))) Region = new Region(gp); }
@@ -122,8 +123,8 @@ class Capa : Form {
     using (var lf = new Font("Segoe UI Semibold", H * 0.38f, GraphicsUnit.Pixel)) using (var vf = new Font("Segoe UI", H * 0.42f, FontStyle.Bold, GraphicsUnit.Pixel)) {
       float y = H * 0.36f, x = tx;
       Action<string, Font, Color> put = (s, f, c) => { using (var b = new SolidBrush(c)) { g.DrawString(s, f, b, x, y - (f == vf ? H * 0.03f : 0)); x += g.MeasureString(s, f, PointF.Empty, StringFormat.GenericTypographic).Width + H * 0.06f; } };
-      put("CA", lf, Color.White); put(ca >= 0 ? ca.ToString() : "–", vf, Col(ca)); x += H * 0.12f;
-      put("PA", lf, Color.White); put(pa >= 0 ? pa.ToString() : "–", vf, Col(pa));
+      put("CA", lf, Color.White); put(ca >= 0 ? ca.ToString() : "â€“", vf, Col(ca)); x += H * 0.12f;
+      put("PA", lf, Color.White); put(pa >= 0 ? pa.ToString() : "â€“", vf, Col(pa));
     }
   }
   [STAThread] static void Main(string[] a) {
