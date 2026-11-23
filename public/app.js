@@ -436,14 +436,33 @@ async function pSkuad(page) {
     page.querySelectorAll('th[data-sort]').forEach(th => th.onclick = () => { const s = th.dataset.sort; if (!s) return; dir = sort === s && dir === 'desc' ? 'asc' : 'desc'; sort = s; draw(); });
   };
   const F = [['all', 'Semua'], ['GK', 'Kiper'], ['DC', 'Bek Tengah'], ['FB', 'Bek Sayap'], ['DM', 'Gel. Bertahan'], ['MC', 'Gel. Tengah'], ['AMC', 'Gel. Serang'], ['W', 'Sayap'], ['ST', 'Penyerang'], ['muda', 'Usia ≤ 21'], ['kontrak', 'Kontrak habis < 1 th']];
-  page.innerHTML = `<div class="page-head"><div><h1>Skuad ${esc(d.club)}</h1><p>${d.rows.length} pemain · rating posisi gaya Genie Scout (0–100) di posisi natural terbaik</p></div></div>
+  page.innerHTML = `<div class="page-head"><div><h1>Skuad ${esc(d.club)}</h1><p>${d.rows.length} pemain · rating posisi gaya Genie Scout (0–100) di posisi natural terbaik</p></div>
+    <div class="seg" style="display:flex;gap:6px"><button class="btn sm" data-skv="tabel">📋 Tabel</button><button class="btn sm" data-skv="posisi">🧩 Per posisi</button></div></div>
+  <div id="skMap" style="display:none"></div>
   <div class="sk-bar"><label>Tim <select id="ft" class="inp">${[['all', 'Semua tim'], ['senior', 'Senior'], ['u21', 'U-21'], ['u18', 'U-18'], ['kandidat', 'Kandidat youth']].map(([k, v]) => `<option value="${k}"${k === team ? ' selected' : ''}>${v} (${d.rows.filter(TEAM[k]).length})</option>`).join('')}</select></label>
     <label>Posisi / filter <select id="fc" class="inp">${F.map(([k, v]) => `<option value="${k}"${k === filter ? ' selected' : ''}>${v}</option>`).join('')}</select></label>
     <span class="muted" id="skN"></span></div>
   <div class="card" id="tb"></div>`;
   $('#ft').onchange = e => { team = e.target.value; try { localStorage.setItem('skTeam', team); } catch { } draw(); };
   $('#fc').onchange = e => { filter = e.target.value; draw(); };
-  draw();
+  // Tampilan: tabel biasa atau peta per posisi (inti/pelapis + kebutuhan + yang sedang ditawar) — skuad senior
+  let view = (() => { try { return localStorage.getItem('skView') || 'tabel'; } catch { return 'tabel'; } })();
+  const setView = async v => {
+    view = v; try { localStorage.setItem('skView', v); } catch { }
+    page.querySelectorAll('[data-skv]').forEach(b => b.classList.toggle('primary', b.dataset.skv === v));
+    const map = $('#skMap'), bar = page.querySelector('.sk-bar'), tb = $('#tb');
+    if (v === 'posisi') {
+      bar.style.display = 'none'; tb.style.display = 'none'; map.style.display = ''; map.innerHTML = '<p class="muted">Memetakan skuad…</p>';
+      try {
+        const t = await api('/api/tawaran');
+        map.innerHTML = (t.butuh && t.butuh.length ? `<div class="card" style="margin-bottom:12px"><h3 style="margin-bottom:8px">🧩 Posisi yang masih butuh pemain <small class="muted">skuad senior · rata-rata rating 11 terbaik: ${t.xiAvg}</small></h3><div class="row-flex" style="gap:6px">${t.butuh.map(b => `<span class="badge ${b.need === 'pelapis' ? 'warn' : 'bad'}">${esc(b.label)} · ${b.need === 'kosong' ? 'kosong' : b.need === 'kualitas' ? 'butuh inti' : 'butuh pelapis'}${b.proses ? ` · ⏳ ${b.proses} ditawar` : ''}</span>`).join('')}</div></div>` : '<div class="tip">✅ <span>Semua posisi aman.</span></div>')
+          + posCards(t, { offers: false }) + '<p class="muted" style="font-size:12px">Inti = pemain terbaik di posisi itu (2 untuk bek tengah, gelandang tengah & penyerang). Rincian semua tawaran ada di menu <a href="#tawaran">Tawaran Saya</a>.</p>';
+        bindPosCards(map);
+      } catch (e) { map.innerHTML = '<p class="bad">Gagal memetakan: ' + esc(e.message) + '</p>'; }
+    } else { bar.style.display = ''; tb.style.display = ''; map.style.display = 'none'; }
+  };
+  page.querySelectorAll('[data-skv]').forEach(b => b.onclick = () => setView(b.dataset.skv));
+  draw(); setView(view);
 }
 
 // ---------- Best XI ----------
@@ -604,6 +623,23 @@ function dofSession(queue) {
   step();
 }
 
+// Kartu per posisi (dipakai Skuad → "Per posisi" dan Tawaran Saya): kebutuhan, skuad inti/pelapis, dan tawaran berjalan.
+function posCards(d, o = {}) {
+  const tone = { good: 'good', warn: 'warn', info: 'info', bad: 'bad', muted: '' };
+  const row = (inner, id) => `<div class="tw-row" data-id="${id}" style="display:flex;gap:10px;align-items:center;padding:7px 0;border-top:1px solid rgba(255,255,255,.06);cursor:pointer">${inner}</div>`;
+  const cap = t => `<div class="muted" style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin:10px 0 2px">${t}</div>`;
+  return `<div class="grid g2">${d.positions.map(p => {
+    const list = p.players.filter(r => !(o.hideTarget && r.status === 'target'));
+    const offers = o.offers ? list : list.filter(r => r.status !== 'gabung' && r.status !== 'lain' && r.status !== 'target');
+    return `<div class="card"><h3 style="display:flex;justify-content:space-between;gap:8px;align-items:baseline">${esc(p.label)} <small class="muted">skuad ${p.squad}/${p.depth}${p.squad ? ` · terbaik ${p.squadBest}` : ''}</small></h3>
+      <div class="row-flex" style="gap:6px;margin:-4px 0 6px"><span class="badge ${tone[p.needTone] || ''}">${esc(p.needLabel)}</span>${p.joined ? `<span class="badge good">✅ ${p.joined} rekrutan baru</span>` : ''}${p.proses ? `<span class="badge warn">⏳ ${p.proses} ditawar</span>` : ''}${p.need !== 'aman' && !p.proses ? `<span class="badge bad">Belum ada tawaran</span>` : ''}</div>
+      ${cap('Skuad saat ini')}
+      ${p.squadPlayers.length ? p.squadPlayers.map(s => row(`<span class="badge ${s.role === 'Inti' ? 'good' : ''}" style="min-width:58px;text-align:center">${s.role}</span><div style="flex:1;min-width:0"><b>${esc(s.name)}</b>${p.players.some(r => r.id === s.id && r.status === 'gabung') ? ' <span class="badge good" style="font-size:10px">BARU</span>' : ''}<div class="muted" style="font-size:12px">${s.age} th · rating ${s.rating}</div></div><span class="n" style="white-space:nowrap">${s.ca}/${s.pa}</span>`, s.id)).join('') : `<p class="bad" style="margin:4px 0;font-size:13px">Tidak ada pemain di posisi ini</p>`}
+      ${offers.length ? cap(o.offers ? 'Tawaran' : 'Sedang ditawar') + offers.map(r => row(`<div style="flex:1;min-width:0"><b>${esc(r.name)}</b><div class="muted" style="font-size:12px">${r.age} th · ${esc(r.pos || '')} · ${esc(r.status === 'gabung' ? 'dari ' + (r.club0 || 'agen bebas') : r.club)} · ${r.ca}/${r.pa}</div></div><span class="badge ${tone[r.tone] || ''}" style="white-space:normal;text-align:right;max-width:46%">${esc(r.statusLabel)}</span>${o.offers ? `<button class="btn sm ghost" data-twrm="${r.id}" title="Hapus dari daftar">${ic('x', 14)}</button>` : ''}`, r.id)).join('') : ''}</div>`;
+  }).join('')}</div>`;
+}
+function bindPosCards(root) { root.querySelectorAll('.tw-row[data-id]').forEach(tr => tr.onclick = e => { if (e.target.closest('[data-twrm]')) return; openPlayer(Number(tr.dataset.id)); }); }
+
 // Tawaran Saya — semua pemain yang Anda tawar / dekati / negosiasikan di FM, dikelompokkan per posisi.
 async function pTawaran(page) {
   let hideTarget = (() => { try { return localStorage.getItem('twHide') !== '0'; } catch { return true; } })();
@@ -618,16 +654,8 @@ async function pTawaran(page) {
       ${need.length ? `<span class="badge">Posisi tanpa tawaran: ${need.map(p => esc(p.label)).join(', ')}</span>` : ''}</div>
     ${d.butuh && d.butuh.length ? `<div class="card" style="margin-bottom:12px"><h3 style="margin-bottom:8px">🧩 Posisi yang masih butuh pemain <small class="muted">rata-rata rating 11 terbaik: ${d.xiAvg}</small></h3><div class="row-flex" style="gap:6px">${d.butuh.map(b => `<span class="badge ${b.need === 'pelapis' ? 'warn' : 'bad'}">${esc(b.label)} · ${b.need === 'kosong' ? 'kosong' : b.need === 'kualitas' ? 'butuh inti' : 'butuh pelapis'}${b.proses ? ` · ⏳ ${b.proses} ditawar` : ' · belum ditawar'}</span>`).join('')}</div></div>` : ''}
     <div class="tip">💡 <span>Dicatat otomatis dari aksi Anda di FM (buat tawaran, pendekatan bebas transfer, negosiasi kontrak) lewat plugin Jembatan, mulai dari save yang terakhir dimuat. Status <b>Sudah bergabung</b> mengikuti klub pemain di data Teknik Oda — bisa tertinggal beberapa menit setelah transfer resmi.</span></div>
-    <div class="grid g2">${pos.map(p => {
-      const list = p.players.filter(r => !(hideTarget && r.status === 'target'));
-      const row = (inner, id, cls = '') => `<div class="tw-row${cls}" data-id="${id}" style="display:flex;gap:10px;align-items:center;padding:7px 0;border-top:1px solid rgba(255,255,255,.06);cursor:pointer">${inner}</div>`;
-      return `<div class="card"><h3 style="display:flex;justify-content:space-between;gap:8px;align-items:baseline">${esc(p.label)} <small class="muted">skuad ${p.squad}/${p.depth}${p.squad ? ` · terbaik ${p.squadBest}` : ''}</small></h3>
-        <div class="row-flex" style="gap:6px;margin:-4px 0 6px"><span class="badge ${tone[p.needTone] || ''}">${esc(p.needLabel)}</span>${p.joined ? `<span class="badge good">✅ ${p.joined} bergabung</span>` : ''}${p.proses ? `<span class="badge warn">⏳ ${p.proses} ditawar</span>` : ''}${p.need !== 'aman' && !p.proses ? `<span class="badge bad">Belum ada tawaran</span>` : ''}</div>
-        <div class="muted" style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin:8px 0 2px">Skuad saat ini</div>
-        ${p.squadPlayers.length ? p.squadPlayers.map(s => row(`<span class="badge ${s.role === 'Inti' ? 'good' : ''}" style="min-width:58px;text-align:center">${s.role}</span><div style="flex:1;min-width:0"><b>${esc(s.name)}</b><div class="muted" style="font-size:12px">${s.age} th · rating ${s.rating}</div></div><span class="n" style="white-space:nowrap">${s.ca}/${s.pa}</span>`, s.id)).join('') : `<p class="bad" style="margin:4px 0;font-size:13px">Tidak ada pemain di posisi ini</p>`}
-        ${list.length ? `<div class="muted" style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin:12px 0 2px">Tawaran</div>` + list.map(r => row(`<div style="flex:1;min-width:0"><b>${esc(r.name)}</b><div class="muted" style="font-size:12px">${r.age} th · ${esc(r.pos || '')} · ${esc(r.status === 'gabung' ? 'dari ' + (r.club0 || '—') : r.club)} · ${r.ca}/${r.pa}</div></div><span class="badge ${tone[r.tone] || ''}" style="white-space:normal;text-align:right;max-width:46%">${esc(r.statusLabel)}</span><button class="btn sm ghost" data-twrm="${r.id}" title="Hapus dari daftar">${ic('x', 14)}</button>`, r.id)).join('') : ''}</div>`;
-    }).join('')}</div>`;
-    page.querySelectorAll('.tw-row[data-id]').forEach(tr => tr.onclick = e => { if (e.target.closest('[data-twrm]')) return; openPlayer(Number(tr.dataset.id)); });
+    ${posCards(d, { offers: true, hideTarget })}`;
+    bindPosCards(page);
     page.querySelectorAll('[data-twrm]').forEach(b => b.onclick = async () => draw(await post('/api/tawaran', { remove: Number(b.dataset.twrm) })));
     $('#twRef').onclick = async () => draw(await api('/api/tawaran'));
     $('#twHide').onchange = e => { hideTarget = e.target.checked; try { localStorage.setItem('twHide', hideTarget ? '1' : '0'); } catch { } draw(d); };

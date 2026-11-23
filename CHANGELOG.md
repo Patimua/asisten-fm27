@@ -3,6 +3,7 @@
 Format versi: `27.1.x` = untuk **Football Manager 27 versi 27.1**, build Asisten ke-x.
 
 ## 27.1.19 — 23 Nov 2026
+- **Skuad → tampilan Per posisi:** kartu tiap posisi berisi pemain Inti/Pelapis, penilaian kebutuhan (Aman / Butuh pelapis / Butuh inti / Kosong), rekrutan baru bertanda BARU, dan pemain yang sedang ditawar. Pilih 📋 Tabel atau 🧩 Per posisi di kanan atas halaman Skuad.
 - **Perbaikan izin kerja:** tombol lama *Work permit ON/OFF* ternyata tidak berpengaruh di FM27 (bit yang diubah memang sudah menyala di semua pemain). Diganti dengan **🛂 Lolos izin kerja & non-UE**: pemain diberi kewarganegaraan kedua sesuai negara *liga* klub Anda (Inggris untuk Premier League), sehingga tidak perlu izin kerja. Untuk izin yang sudah ditolak: terapkan, lalu ajukan banding di FM.
 - **Baru — menu Tawaran Saya** (Pasar): semua pemain yang Anda tawar, dekati (bebas transfer) atau negosiasikan kontraknya di FM dirangkum **per posisi**, beserta status *Sudah bergabung / Kontrak disepakati / Negosiasi / Tawaran dikirim / Pindah ke klub lain* dan jumlah pemain skuad di posisi itu, sehingga terlihat posisi mana yang belum terisi. Setiap posisi juga menampilkan **skuad saat ini (Inti/Pelapis)** dan penilaian kebutuhan: *Aman*, *Butuh pelapis*, *Butuh pemain inti lebih bagus* (dibanding rata-rata 11 terbaik), atau *Kosong*. Dicatat otomatis lewat plugin Jembatan.
 - **Perbaikan Keuangan Klub** (diuji langsung di layar Keuangan FM):
