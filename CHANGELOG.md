@@ -7,6 +7,7 @@ Format versi: `27.1.x` = untuk **Football Manager 27 versi 27.1**, build Asisten
   - **Anggaran transfer** kini mengubah angka *Anggaran yang Tersedia* yang tampil di FM. Sebelumnya yang berubah anggaran awal musim, jadi di game seolah tidak berubah.
   - **Anggaran gaji** kini menambah anggaran. Sebelumnya cheat ini keliru menaikkan *pengeluaran* gaji, sehingga sisa anggaran malah makin minus.
   - Panel Keuangan di Asisten menampilkan *Pengeluaran gaji* dan sisa *Tersedia*, sama seperti FM.
+  - **Editor keuangan baru (setara editor dalam-game FM):** ketik angka bebas (280jt, 1M, 500rb, -50jt) atau pilih cepat, lalu **Tetapkan** angka persis / **Tambah** / **Kurangi**. Rentang mengikuti editor FM: saldo & anggaran transfer (−£1 M) s/d £1 M, anggaran gaji £0 s/d £5 jt/mgg. Tombol baru **Cukupkan anggaran gaji** (pengeluaran + 10%).
   - Saldo sudah benar sejak awal. Layar Keuangan FM baru memperbarui angka setelah dibuka ulang (pindah tab lalu kembali).
 
 ## 27.1.18 — 23 Nov 2026
