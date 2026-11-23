@@ -930,8 +930,10 @@ const server = http.createServer(async (req, res) => {
       else if (a === 'finance') r = await CH.finance(uids, P.op, Number(P.value || 0));
       else if (a === 'board') r = await CH.boardComplete(DB.players.filter(p => p.club === myClub()).map(p => p.id));
       else if (a === 'know') r = await CH.knowledgeMax(DB.staff.filter(x => x.club === myClub()).map(x => x.id), DB.players.filter(p => p.club === myClub()).map(p => p.id));
-      else if (a === 'citizen') { // kewarganegaraan kedua; default = negara terbanyak di klub saya (mis. Italia untuk klub Serie A)
-        const cnt = {}; DB.players.filter(p => p.club === myClub() && p.nat && p.nat[0]).forEach(p => cnt[p.nat[0]] = (cnt[p.nat[0]] || 0) + 1);
+      else if (a === 'citizen') { // kewarganegaraan kedua; default = negara LIGA klub saya (Inggris untuk Premier League, Italia untuk Serie A)
+        // → lolos aturan non-UE / pemain asing, dan di Inggris: tidak perlu izin kerja sama sekali
+        const myDiv = (DB.players.find(p => p.club === myClub() && !p.teamType && p.div) || {}).div;
+        const cnt = {}; DB.players.filter(p => (myDiv ? p.div === myDiv : p.club === myClub()) && p.nat && p.nat[0]).forEach(p => cnt[p.nat[0]] = (cnt[p.nat[0]] || 0) + 1);
         const natName = P.nat || Object.entries(cnt).sort((x, y) => y[1] - x[1])[0]?.[0];
         const ref = DB.players.find(p => p.nat && p.nat[0] === natName && p.id < 2000000000) || DB.players.find(p => p.nat && p.nat[0] === natName); // nat[0] = kewarganegaraan utama
         if (!ref) return send(res, 400, { error: 'Negara ' + natName + ' tidak ditemukan' });
