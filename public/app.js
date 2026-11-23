@@ -97,6 +97,7 @@ const ROUTES = [
   { id: 'panduan', hint: 'Atribut kunci per posisi & standar kelas dunia', name: 'Panduan Rekrutmen', icon: 'trophy', fn: pPanduan },
   { id: 'peran', hint: 'Cari pemain untuk peran tertentu', name: 'Pencari Peran', icon: 'target', fn: pPeran },
   { id: 'target', hint: 'Incaran transfer & sesi minta DoF menawar', name: 'Target Transfer', icon: 'star', fn: pTarget },
+  { id: 'tawaran', hint: 'Pemain yang Anda tawar di FM: sudah gabung atau belum, per posisi', name: 'Tawaran Saya', icon: 'list', fn: pTawaran },
   { id: 'pantau', hint: 'Pemain yang Anda tandai', name: 'Daftar Pantau', icon: 'list', fn: pPantau },
   { id: 'banding', hint: 'Bandingkan hingga 3 pemain', name: 'Bandingkan', icon: 'cmp', fn: pBanding },
   { sec: 'Klub' },
@@ -107,7 +108,7 @@ const ROUTES = [
 ];
 
 // Menu samping ringkas: halaman sejenis digabung jadi satu entri; di halamannya muncul tab untuk berpindah.
-const NAV_GRP = { skuad: 'skuad', xi: 'skuad', akademi: 'skuad', scout: 'cari', database: 'cari', peran: 'cari', panduan: 'cari', target: 'transfer', pantau: 'transfer', banding: 'transfer' };
+const NAV_GRP = { skuad: 'skuad', xi: 'skuad', akademi: 'skuad', scout: 'cari', database: 'cari', peran: 'cari', panduan: 'cari', target: 'transfer', tawaran: 'transfer', pantau: 'transfer', banding: 'transfer' };
 const NAV_GRP_META = { skuad: { name: 'Skuad', icon: 'shirt', hint: 'Pemain, susunan terbaik & akademi' }, cari: { name: 'Cari Pemain', icon: 'scout', hint: 'Scouting, database, pencari peran & panduan' }, transfer: { name: 'Transfer', icon: 'star', hint: 'Target, daftar pantau & bandingkan' } };
 let KT_SUM = null, KT_REQ = false;
 const navBadge = id => { const k = KT_SUM; if (!k || !k.ok) return ''; const v = { skuad: [k.squadN, 0], latihan: [k.training && k.training.issues, 1], target: [k.targetsN, 0], pantau: [k.shortlistN, 0], beranda: [k.jobs && k.jobs.length, 0], akademi: [k.youthN, 0] }[id]; return v && v[0] ? `<span class="nb${v[1] ? ' r' : ''}">${v[0]}</span>` : ''; };
@@ -603,6 +604,37 @@ function dofSession(queue) {
   step();
 }
 
+// Tawaran Saya — semua pemain yang Anda tawar / dekati / negosiasikan di FM, dikelompokkan per posisi.
+async function pTawaran(page) {
+  let hideTarget = (() => { try { return localStorage.getItem('twHide') !== '0'; } catch { return true; } })();
+  const draw = d => {
+    const tone = { good: 'good', warn: 'warn', info: 'info', bad: 'bad', muted: '' };
+    const pos = d.positions;
+    const need = pos.filter(p => !p.joined && !p.proses);
+    page.innerHTML = `<div class="page-head"><div><h1>Tawaran Saya</h1><p>${esc(d.club)} · ${d.total} pemain ditawar/didekati · data per ${esc(fmtDate(d.gameDate))}</p></div>
+      <div class="row-flex"><label class="muted" style="display:flex;gap:6px;align-items:center;font-size:13px"><input type="checkbox" id="twHide" ${hideTarget ? 'checked' : ''}> Sembunyikan yang hanya diincar</label><button class="btn" id="twRef">${ic('refresh', 16)} Muat ulang</button></div></div>
+    <div class="row-flex" style="gap:8px;margin-bottom:12px">
+      <span class="badge good">✅ Sudah bergabung: ${d.joined}</span><span class="badge warn">⏳ Masih proses: ${d.proses}</span>${d.gagal ? `<span class="badge bad">❌ Pindah ke klub lain: ${d.gagal}</span>` : ''}
+      ${need.length ? `<span class="badge">Posisi tanpa tawaran: ${need.map(p => esc(p.label)).join(', ')}</span>` : ''}</div>
+    <div class="tip">💡 <span>Dicatat otomatis dari aksi Anda di FM (buat tawaran, pendekatan bebas transfer, negosiasi kontrak) lewat plugin Jembatan, mulai dari save yang terakhir dimuat. Status <b>Sudah bergabung</b> mengikuti klub pemain di data Teknik Oda — bisa tertinggal beberapa menit setelah transfer resmi.</span></div>
+    <div class="grid g2">${pos.map(p => {
+      const list = p.players.filter(r => !(hideTarget && r.status === 'target'));
+      return `<div class="card"><h3 style="display:flex;justify-content:space-between;gap:8px;align-items:baseline">${esc(p.label)} <small class="muted">skuad ${p.squad}${p.squad ? ` · terbaik ${p.squadBest}` : ''}</small></h3>
+        <div class="row-flex" style="gap:6px;margin:-4px 0 8px">${p.joined ? `<span class="badge good">✅ ${p.joined} bergabung</span>` : ''}${p.proses ? `<span class="badge warn">⏳ ${p.proses} proses</span>` : ''}${!p.joined && !p.proses ? `<span class="badge${p.squad < 2 ? ' bad' : ''}">${p.squad < 2 ? 'Belum ada tawaran · skuad tipis' : 'Belum ada tawaran'}</span>` : ''}</div>
+        ${list.length ? `<div class="tbl-wrap"><table class="tbl"><tbody>${list.map(r => `<tr data-id="${r.id}" style="cursor:pointer">
+          <td><b>${esc(r.name)}</b><div class="muted" style="font-size:12px">${r.age} th · ${esc(r.pos || '')} · ${esc(r.status === 'gabung' ? 'dari ' + (r.club0 || '—') : r.club)}</div></td>
+          <td class="n" style="white-space:nowrap">${r.ca}/${r.pa}</td>
+          <td><span class="badge ${tone[r.tone] || ''}">${esc(r.statusLabel)}</span></td>
+          <td><button class="btn sm ghost" data-twrm="${r.id}" title="Hapus dari daftar">${ic('x', 14)}</button></td></tr>`).join('')}</tbody></table></div>`
+          : `<p class="muted" style="margin:0;font-size:13px">—</p>`}</div>`;
+    }).join('')}</div>`;
+    page.querySelectorAll('tr[data-id]').forEach(tr => tr.onclick = e => { if (e.target.closest('[data-twrm]')) return; openPlayer(Number(tr.dataset.id)); });
+    page.querySelectorAll('[data-twrm]').forEach(b => b.onclick = async () => draw(await post('/api/tawaran', { remove: Number(b.dataset.twrm) })));
+    $('#twRef').onclick = async () => draw(await api('/api/tawaran'));
+    $('#twHide').onchange = e => { hideTarget = e.target.checked; try { localStorage.setItem('twHide', hideTarget ? '1' : '0'); } catch { } draw(d); };
+  };
+  draw(await api('/api/tawaran'));
+}
 async function pPantau(page) {
   const l = await loadShort();
   const tags = ['Pantau', 'Target Utama', 'Alternatif', 'Pinjam', 'Bebas Transfer'];

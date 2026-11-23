@@ -980,6 +980,11 @@ const server = http.createServer(async (req, res) => {
       if (req.method === 'POST') { const b = await body(req); for (const k of Object.keys(DEFAULTS)) if (typeof b[k] === 'string') cfg[k] = b[k]; saveCfg(); CT_CACHE = null; DB.mtime = 0; loadDump(); }
       return send(res, 200, cfg);
     }
+    if (p === '/api/tawaran') { // Tawaran Saya — rangkuman pemain yang ditawar/didekati di FM, per posisi
+      const TW = require('./lib/tawaran'); const f = cfile('tawaran.json');
+      if (req.method === 'POST') { const b = await body(req); if (b.remove) TW.remove(f, DB.players, b.remove); }
+      return send(res, 200, TW.build({ file: f, logFile: path.join(JB_DIR, 'event.log'), players: DB.players, myClub: myClub(), gameDate: DB.meta && DB.meta.gameDate, POS: E.POSITIONS }));
+    }
     if (p === '/api/targets') { // Target Transfer ⭐ — daftar terpisah dengan prioritas & status penawaran
       const TF = TF_FILE();
       let list = readJSON(TF, []);

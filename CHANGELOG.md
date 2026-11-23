@@ -3,6 +3,7 @@
 Format versi: `27.1.x` = untuk **Football Manager 27 versi 27.1**, build Asisten ke-x.
 
 ## 27.1.19 — 23 Nov 2026
+- **Baru — menu Tawaran Saya** (Pasar): semua pemain yang Anda tawar, dekati (bebas transfer) atau negosiasikan kontraknya di FM dirangkum **per posisi**, beserta status *Sudah bergabung / Kontrak disepakati / Negosiasi / Tawaran dikirim / Pindah ke klub lain* dan jumlah pemain skuad di posisi itu, sehingga terlihat posisi mana yang belum terisi. Dicatat otomatis lewat plugin Jembatan.
 - **Perbaikan Keuangan Klub** (diuji langsung di layar Keuangan FM):
   - **Anggaran transfer** kini mengubah angka *Anggaran yang Tersedia* yang tampil di FM. Sebelumnya yang berubah anggaran awal musim, jadi di game seolah tidak berubah.
   - **Anggaran gaji** kini menambah anggaran. Sebelumnya cheat ini keliru menaikkan *pengeluaran* gaji, sehingga sisa anggaran malah makin minus.
