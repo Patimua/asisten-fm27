@@ -1243,7 +1243,7 @@ async function pCheat(page) {
   const loadFin = async () => {
     const f = await api('/api/cheat/finance' + (finClub() ? '?club=' + encodeURIComponent(finClub()) : ''));
     $('#finClub').textContent = '· ' + (f.club || '');
-    $('#finRead').innerHTML = f.error ? `<span class="bad">${esc(f.error)}</span>` : `<div class="grid g4"><div><small class="muted">Saldo bank</small><div class="big">${gbp(f.balance)}</div></div><div><small class="muted">Anggaran transfer</small><div class="big">${gbp(f.transfer)}</div></div><div><small class="muted">Anggaran gaji / minggu</small><div class="big">${gbp(f.wageBudget)}</div></div><div><small class="muted">Total gaji saat ini / minggu</small><div class="big">${gbp(f.wageBill)}</div></div></div>`;
+    $('#finRead').innerHTML = f.error ? `<span class="bad">${esc(f.error)}</span>` : `<div class="grid g4"><div><small class="muted">Saldo bank</small><div class="big">${gbp(f.balance)}</div></div><div><small class="muted">Anggaran transfer</small><div class="big">${gbp(f.transfer)}</div></div><div><small class="muted">Anggaran gaji / minggu</small><div class="big">${gbp(f.wageBudget)}</div></div><div><small class="muted">Pengeluaran gaji / minggu</small><div class="big">${gbp(f.wageBill)}</div><small class="${f.wageBudget - f.wageBill < 0 ? 'bad' : 'muted'}">Tersedia ${gbp(f.wageBudget - f.wageBill)}</small></div></div>`;
     return f;
   };
   page.querySelectorAll('[data-fin]').forEach(b => b.onclick = async () => {

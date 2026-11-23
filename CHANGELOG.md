@@ -2,6 +2,13 @@
 
 Format versi: `27.1.x` = untuk **Football Manager 27 versi 27.1**, build Asisten ke-x.
 
+## 27.1.19 — 23 Nov 2026
+- **Perbaikan Keuangan Klub** (diuji langsung di layar Keuangan FM):
+  - **Anggaran transfer** kini mengubah angka *Anggaran yang Tersedia* yang tampil di FM. Sebelumnya yang berubah anggaran awal musim, jadi di game seolah tidak berubah.
+  - **Anggaran gaji** kini menambah anggaran. Sebelumnya cheat ini keliru menaikkan *pengeluaran* gaji, sehingga sisa anggaran malah makin minus.
+  - Panel Keuangan di Asisten menampilkan *Pengeluaran gaji* dan sisa *Tersedia*, sama seperti FM.
+  - Saldo sudah benar sejak awal. Layar Keuangan FM baru memperbarui angka setelah dibuka ulang (pindah tab lalu kembali).
+
 ## 27.1.18 — 23 Nov 2026
 - **Latihan → Terapkan ke FM tidak lagi berhenti dengan error "FM belum punya contoh perintah".** Bila FM baru dibuka, Asisten menampilkan langkah singkat (ganti Fokus Tambahan satu pemain di FM), menunggu, lalu **melanjutkan sendiri** ke semua pemain begitu FM merekamnya.
 - Perbaikan: hasil dari plugin Jembatan kadang terbaca kosong (berkas berisi karakter non-ASCII), sehingga jumlah pemain yang berhasil diterapkan bisa salah.
