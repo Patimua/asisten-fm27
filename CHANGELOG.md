@@ -7,6 +7,7 @@ Format versi: `27.1.x` = untuk **Football Manager 27 versi 27.1**, build Asisten
 - **Baru — Laporan Pemandu:** rekomendasi pemandu bakat dengan Pilih semua dan **Tugaskan DoF negosiasi transfer** (memakai perintah asli FM, tanpa contoh manual; butuh plugin Jembatan). *Pengiriman ke FM belum teruji — coba satu pemain dulu.*
 - **Baru — Minat Bergabung** (Pusat Cheat → Kontrak & Transfer): saklar bawaan FM *Semua pemain tertarik*, *Tidak bisa dipecat*. Belum teruji di FM27.
 - **Perbaikan "Manajer disukai":** gagal di klub baru karena objek manajer dicari lewat relasi pemain; kini langsung dari UID manajer.
+- **Baru — ↩️ Kembalikan tim** (Pusat Cheat → Lawan → Hancurkan Tim): pulihkan klub/liga yang pernah dihancurkan, per tim atau semua, juga setelah save dimuat ulang.
 - **Keuangan instan:** alamat keuangan disimpan, tidak memindai indeks lagi (16 dtk → <1 dtk). Indeks pemain dipindai lebih awal saat FM dibuka.
 - **Mode Comeback** hanya bisa diaktifkan sebelum kick-off (FM mengunci kemampuan saat kick-off), lawan berikutnya terisi otomatis, tidak bisa menumpuk dua kali.
 - **CA/PA di layar rekrutmen FM:** lapisan kini juga mengenali daftar tanpa kolom Posisi, dan dinyalakan ulang otomatis bila mati. *Baru diuji pada gambar, belum di layar rekrutmen FM.*

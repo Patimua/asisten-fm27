@@ -569,6 +569,7 @@ function parseCT() {
 // ---------------- Cakupan cheat ----------------
 const Cheats = require('./lib/cheats');
 const CH = new Cheats(path.join(DATA_DIR));
+CH.getCareer = () => careerKey();
 CH.cfgFile = cfile; // youth intake per karier
 const { Versi, APP } = require('./lib/versi');
 const VS = new Versi(DATA_DIR, CH);
@@ -966,6 +967,15 @@ const server = http.createServer(async (req, res) => {
       } catch (e) { return send(res, 500, { error: e.message }); }
     }
     if (p === '/api/board') { try { if (req.method === 'POST') { const b = await body(req); bpBusy = true; try { return send(res, 200, await boardSet(!!b.on)); } finally { bpBusy = false; } } return send(res, 200, await boardState()); } catch (e) { return send(res, 500, { error: e.message }); } }
+    if (p === '/api/destroy/restore') { // daftar (GET) / kembalikan (POST {ids}) tim yang dihancurkan
+      try {
+        if (req.method !== 'POST') { const st = await CH.status(); if (st.ok && CH.pid !== st.pid) await CH.index(); return send(res, 200, { rows: CH.destroyed(careerKey()) }); }
+        const vs = await VS.status().catch(() => null); if (vs && vs.mode === 'terkunci') return send(res, 423, { error: vs.msg });
+        const b = await body(req), ids = Array.isArray(b.ids) ? b.ids : [];
+        const r = await CH.restoreDestroyed(ids, careerKey(), !!b.dry); if (!b.dry) logLine('INFO', `kembalikan tim: ${r.players} pemain, ${r.writes} penulisan`);
+        return send(res, 200, r);
+      } catch (e) { return send(res, 500, { error: e.message }); }
+    }
     if (p === '/api/destroy' ) {
       const b = req.method === 'POST' ? await body(req) : q; const t = b.type === 'div' ? 'div' : 'club', v = String(b.value || '');
       if (!v) return send(res, 400, { error: 'Pilih klub / liga dulu.' });

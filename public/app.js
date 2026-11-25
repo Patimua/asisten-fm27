@@ -1156,6 +1156,7 @@ async function pCheat(page) {
       <div class="stage-row">${[[0.8, 'Goyah', 'mental ×0,8'], [0.6, 'Rapuh', 'mental ×0,6'], [0.4, 'Hancur', 'mental ×0,4'], [0.2, 'Lebur', 'mental ×0,2']].map(([v, n, s], i) => `<button class="stage s${i + 1}${i === 1 ? ' on' : ''}" data-ds="${v}"><b>${n}</b><small>${s}</small></button>`).join('')}</div>
       <div class="row-flex" style="margin-top:10px;gap:16px;flex-wrap:wrap"><label class="chk"><input type="checkbox" id="dsSenior" checked> Tim senior saja</label><label class="chk"><input type="checkbox" id="dsHid" checked> Tersembunyi terburuk (tidak konsisten, ciut di laga besar, rawan cedera, kasar)</label><label class="chk"><input type="checkbox" id="dsPers" checked> Kepribadian rapuh (tekanan, profesionalisme, temperamen rendah)</label><label class="chk"><input type="checkbox" id="dsFull"> Juga turunkan CA, teknik & fisik</label></div>
       <div class="row-flex" style="margin-top:12px"><button class="btn danger" id="dsGo">💥 Hancurkan</button></div>
+      <div id="dsBack" style="margin-top:18px"></div>
       <p class="muted" style="margin:8px 0 0;font-size:12px">Nilai asli disimpan; batalkan di Riwayat selama FM27 belum ditutup.</p></div>
     <div class="card"><h3>✏️ Edit per atribut</h3><p class="muted" style="margin:0;font-size:13px">Buka profil pemain mana pun, lalu klik angka atribut untuk mengubahnya langsung di FM27.</p></div>
   </div>
@@ -1300,6 +1301,21 @@ async function pCheat(page) {
   let dsF = 0.6;
   const dsFill = () => { const t = $('#dsType').value; $('#dsLbl').textContent = t === 'div' ? 'Nama liga' : 'Nama klub'; $('#dsList').innerHTML = (t === 'div' ? LISTS.divs : LISTS.clubs).slice(0, 800).map(x => `<option value="${esc(x.k)}">${x.n} pemain</option>`).join(''); };
   const dsQ = () => ({ type: $('#dsType').value, value: $('#dsVal').value.trim(), senior: $('#dsSenior').checked ? '1' : '0' });
+  const dsList = async () => {
+    const box = $('#dsBack'); if (!box) return; const d = await api('/api/destroy/restore').catch(e => ({ rows: [], err: e.message })), R = d.rows || [];
+    box.innerHTML = `<div class="row-flex" style="justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding-top:14px"><h3 style="margin:0">↩️ Kembalikan tim</h3>${R.length > 1 ? '<button class="btn sm" data-dsr="all">Kembalikan semua (' + R.length + ')</button>' : ''}</div>
+      <p class="muted" style="font-size:12.5px;margin:6px 0 10px">Mental, atribut tersembunyi & kepribadian pulih ke sebelum dihancurkan (CA & atribut juga bila ikut diturunkan). Tetap bisa setelah save dimuat ulang. Perkembangan pemain sejak itu tidak hilang.</p>
+      ${R.length ? R.map(x => `<div class="cheat-item" style="align-items:center"><span style="flex:1"><b>${esc(x.name)}</b><br><small class="muted">${x.players} pemain · ${esc(x.detail)} · ${new Date(x.at).toLocaleString('id-ID')}</small></span><button class="btn primary sm" data-dsr="${x.id}">↩️ Kembalikan</button></div>`).join('') : `<p class="muted">${d.err ? 'Daftar tidak terbaca: ' + esc(d.err) : 'Tidak ada tim yang perlu dikembalikan di karier ini.'}</p>`}`;
+    box.querySelectorAll('[data-dsr]').forEach(b => b.onclick = async () => {
+      const ids = b.dataset.dsr === 'all' ? R.map(x => x.id) : [Number(b.dataset.dsr)], nm = b.dataset.dsr === 'all' ? R.length + ' tim' : (R.find(x => x.id === ids[0]) || {}).name;
+      try {
+        const pv = await post('/api/destroy/restore', { ids, dry: true });
+        if (!(await ask({ icon: '↩️', title: `Kembalikan ${nm}?`, ok: 'Ya, kembalikan', body: pv.players ? `<b>${pv.players} pemain</b> akan dipulihkan${pv.found < pv.total ? ` (${pv.total - pv.found} tidak ditemukan lagi di save)` : ''}. Simpan game di FM setelahnya supaya permanen.` : 'Semua nilainya sudah pulih. Daftar ini hanya akan dibersihkan.' }))) return;
+        const r = await post('/api/destroy/restore', { ids }); toast(r.players ? `↩️ ${nm}: ${r.players} pemain dipulihkan` : 'Sudah pulih', 'ok'); dsList(); after();
+      } catch (e) { toast('Gagal: ' + e.message); }
+    });
+  };
+  dsList();
   const dsPrev = async () => { const q = dsQ(); if (!q.value) { $('#dsInfo').textContent = ''; return null; } const r = await api('/api/destroy?' + new URLSearchParams(q)).catch(() => null); $('#dsInfo').textContent = r ? `${r.count} pemain · ${r.clubs} klub · rata-rata CA ${r.avgCa}` : ''; return r; };
   $('#dsType').onchange = () => { $('#dsVal').value = ''; dsFill(); dsPrev(); }; $('#dsVal').onchange = dsPrev; $('#dsSenior').onchange = dsPrev; dsFill();
   page.querySelectorAll('[data-ds]').forEach(b => b.onclick = () => { dsF = Number(b.dataset.ds); page.querySelectorAll('[data-ds]').forEach(x => x.classList.toggle('on', x === b)); });
@@ -1308,7 +1324,7 @@ async function pCheat(page) {
     const pv = await dsPrev(); if (!pv || !pv.count) return toast('Tidak ada pemain di target ini', 'info');
     if (!(await ask({ icon: '💥', tone: 'warn', title: `Hancurkan ${q.type === 'div' ? 'liga ' : ''}${q.value}?`, ok: 'Ya, hancurkan', body: `<b>${pv.count.toLocaleString('id')} pemain</b> di ${pv.clubs} klub (${pv.sample.map(esc).join(', ')}${pv.clubs > 6 ? ', …' : ''}). Atribut mental ×${String(dsF).replace('.', ',')}${$('#dsHid').checked ? ', tersembunyi terburuk' : ''}${$('#dsPers').checked ? ', kepribadian rapuh' : ''}. ${$('#dsFull').checked ? `CA juga turun: rata-rata ${pv.avgCa} → ${Math.round(pv.avgCa * dsF)}.` : `CA tetap (${pv.avgCa}).`}${pv.skippedMine ? '<br>Klub Anda di liga ini dilewati.' : ''}<p class="muted" style="margin:10px 0 0;font-size:13px">Bisa dibatalkan di Riwayat selama FM27 belum ditutup.</p>` }))) return;
     toast('Menghancurkan…', 'info');
-    try { const r = await post('/api/destroy', { ...q, factor: dsF, hidden: $('#dsHid').checked, pers: $('#dsPers').checked, full: $('#dsFull').checked, lockPA: $('#dsFull').checked }); toast(`💥 ${r.players} pemain di ${r.clubs} klub: mental rata-rata ${r.mentalBefore} → ${r.mentalAfter}${r.caAfter !== r.caBefore ? ` · CA ${r.caBefore} → ${r.caAfter}` : ''}`, 'ok'); dsPrev(); after(); }
+    try { const r = await post('/api/destroy', { ...q, factor: dsF, hidden: $('#dsHid').checked, pers: $('#dsPers').checked, full: $('#dsFull').checked, lockPA: $('#dsFull').checked }); toast(`💥 ${r.players} pemain di ${r.clubs} klub: mental rata-rata ${r.mentalBefore} → ${r.mentalAfter}${r.caAfter !== r.caBefore ? ` · CA ${r.caBefore} → ${r.caAfter}` : ''}`, 'ok'); dsPrev(); dsList(); after(); }
     catch (e) { toast('Gagal: ' + e.message); }
   };
   $('#loveBtnS').onclick = async () => { await runCheat('love', scope(), {}, 'Staf dalam cakupan menyukai manajer'); after(); };
