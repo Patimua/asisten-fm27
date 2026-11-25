@@ -2,6 +2,15 @@
 
 Format versi: `27.1.x` = untuk **Football Manager 27 versi 27.1**, build Asisten ke-x.
 
+## 27.1.20 — 25 Nov 2026
+- **Latihan → Metode Optimal** (bawaan; bisa kembali ke Klasik): jadwal dari Zergos v3 dan studi Fm-Match-Lab 24b, rotasi 5 minggu, menyesuaikan jadwal laga. Fokus individu: Kecepatan, lalu Daya Tahan/Ketahanan. Panduan 8 langkah di halaman Latihan. Jadwal junior mengikuti data 66 uji setahun.
+- **Baru — Laporan Pemandu:** rekomendasi pemandu bakat dengan Pilih semua dan **Tugaskan DoF negosiasi transfer** (memakai perintah asli FM, tanpa contoh manual; butuh plugin Jembatan). *Pengiriman ke FM belum teruji — coba satu pemain dulu.*
+- **Baru — Minat Bergabung** (Pusat Cheat → Kontrak & Transfer): saklar bawaan FM *Semua pemain tertarik*, *Tidak bisa dipecat*. Belum teruji di FM27.
+- **Perbaikan "Manajer disukai":** gagal di klub baru karena objek manajer dicari lewat relasi pemain; kini langsung dari UID manajer.
+- **Keuangan instan:** alamat keuangan disimpan, tidak memindai indeks lagi (16 dtk → <1 dtk). Indeks pemain dipindai lebih awal saat FM dibuka.
+- **Mode Comeback** hanya bisa diaktifkan sebelum kick-off (FM mengunci kemampuan saat kick-off), lawan berikutnya terisi otomatis, tidak bisa menumpuk dua kali.
+- **CA/PA di layar rekrutmen FM:** lapisan kini juga mengenali daftar tanpa kolom Posisi, dan dinyalakan ulang otomatis bila mati. *Baru diuji pada gambar, belum di layar rekrutmen FM.*
+
 ## 27.1.19 — 23 Nov 2026
 - **Skuad → tampilan Per posisi:** kartu tiap posisi berisi pemain Inti/Pelapis, penilaian kebutuhan (Aman / Butuh pelapis / Butuh inti / Kosong), rekrutan baru bertanda BARU, dan pemain yang sedang ditawar. Pilih 📋 Tabel atau 🧩 Per posisi di kanan atas halaman Skuad.
 - **Perbaikan izin kerja:** tombol lama *Work permit ON/OFF* ternyata tidak berpengaruh di FM27 (bit yang diubah memang sudah menyala di semua pemain). Diganti dengan **🛂 Lolos izin kerja & non-UE**: pemain diberi kewarganegaraan kedua sesuai negara *liga* klub Anda (Inggris untuk Premier League), sehingga tidak perlu izin kerja. Untuk izin yang sudah ditolak: terapkan, lalu ajukan banding di FM.

@@ -44,6 +44,8 @@ function cfile(name) {
 }
 const SHORT_FILE = () => cfile('daftar-pantau.json');
 const LT_FILE = () => cfile('latihan.json');
+const LT_METODE = path.join(DATA_DIR, 'latihan-metode.json');
+const ltMetode = () => { try { return JSON.parse(fs.readFileSync(LT_METODE, 'utf8')).metode === 'klasik' ? 'klasik' : 'optimal'; } catch { return 'optimal'; } };
 const TF_FILE = () => cfile('target-transfer.json');
 
 const DEFAULTS = {
@@ -142,6 +144,8 @@ loadDump();
 setInterval(loadDump, 15000);
 
 const myClub = () => cfg.club || (DB.meta && DB.meta.myClub) || '';
+const mgrRow = () => { const n = DB.meta && DB.meta.manager, l = (DB.staff || []).filter(s => s.name === n); return l.find(s => s.club === myClub() && s.job === 'Manager') || l[0] || null; };
+const myIds = () => DB.players.filter(p => p.club === myClub()).map(p => p.id);
 // Pencocokan nama hasil OCR (kolom.exe) → pemain: tanpa aksen/huruf kecil, toleran 1–2 salah huruf; klub saya diutamakan
 let KOLOM = { key: null, map: new Map(), byLast: new Map() };
 const kNorm = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
@@ -150,6 +154,15 @@ function kDist(a, b, max) {
   let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
   for (let i = 1; i <= a.length; i++) { const cur = [i]; let lo = i; for (let j = 1; j <= b.length; j++) { cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); lo = Math.min(lo, cur[j]); } if (lo > max) return max + 1; prev = cur; }
   return prev[b.length];
+}
+// Tanpa judul kolom (kartu/laporan rekrutmen): hanya nama yang cocok PERSIS dan tidak bermakna ganda
+function kolomStrict(raw) {
+  kolomMatch('zzzz zzzz'); const n = kNorm(raw), me = myClub();
+  const one = l => { if (!l || !l.length) return null; if (l.length === 1) return l[0]; const s = l.slice().sort((a, b) => b.ca - a.ca), m = l.find(p => p.club === me); return m || (s[0].ca - s[1].ca >= 25 ? s[0] : null); };
+  if (n.split(' ').length >= 2 && !/^[a-z] /.test(n)) return one(KOLOM.map.get(n));
+  const ab = String(raw).match(/^\s*([A-Za-zÀ-ÿ])\.\s*(.+)$/); if (!ab) return null;
+  const ini = kNorm(ab[1]), rest = kNorm(ab[2]); if (rest.length < 3) return null;
+  return one((KOLOM.byLast.get(rest.split(' ').pop()) || []).filter(p => { const k = kNorm(p.name); return k.startsWith(ini) && k.endsWith(' ' + rest); }));
 }
 function kolomMatch(raw) {
   if (KOLOM.key !== DB.mtime) {
@@ -236,14 +249,21 @@ function youthNotifyTick() {
 // Badge CA/PA di atas profil pemain FM (native/capa.exe; satu instance, keluar sendiri bila server mati).
 // Badge CA/PA (capa.exe, satu salinan): salinan lama dihentikan dulu supaya yang berjalan selalu baru (salinan lama bisa
 // macet setelah FM ditutup-buka berkali-kali). Salinan baru juga dijalankan ulang otomatis bila keluar.
-function startCapa() {
-  for (const nm of ['capa', 'kolom']) { // capa = badge di profil; kolom = angka CA/PA di tabel pemain FM
+function startCapa(only) {
+  for (const nm of (only ? [only] : ['capa', 'kolom'])) { // capa = badge di profil; kolom = angka CA/PA di tabel pemain FM
     const exe = path.join(__dirname, 'native', nm + '.exe'); if (!fs.existsSync(exe)) continue;
     try { require('child_process').execFileSync('taskkill', ['/F', '/IM', nm + '.exe'], { stdio: 'ignore', windowsHide: true }); } catch { }
     setTimeout(() => { try { require('child_process').spawn(exe, ['http://localhost:' + PORT].concat(fs.existsSync(path.join(DATA_DIR, 'capa-debug')) ? ['debug'] : []), { detached: true, stdio: 'ignore' }).unref(); } catch (e) { logLine('WARN', nm + ': ' + e.message); } }, 800);
   }
 }
-if (PORT === 2728) setTimeout(startCapa, 3000);
+if (PORT === 2728) {
+  setTimeout(() => startCapa(), 3000);
+  // Penjaga: lapisan CA/PA yang mati (mis. server sempat sibuk) dinyalakan lagi selama FM berjalan
+  setInterval(async () => { try { if (!(await processRunning('fm.exe'))) return; for (const nm of ['capa', 'kolom']) if (!(await processRunning(nm + '.exe'))) { startCapa(nm); logLine('INFO', nm + ' dinyalakan ulang'); } } catch { } }, 45000);
+}
+// Indeks pemain dipindai di awal (±15 dtk) supaya cheat pertama langsung jalan
+let WARM_PID = 0;
+if (PORT === 2728) setInterval(async () => { try { const st = await CH.status(); if (st.ok && st.pid !== WARM_PID && DB.players && DB.players.length) { WARM_PID = st.pid; await CH.index(); } } catch { WARM_PID = 0; } }, 20000);
 // Bawa jendela FM ke depan (setelah "Buka di FM") supaya tidak perlu pindah manual
 function focusFM(delay) { const exe = path.join(__dirname, 'native', 'fokus.exe'); if (!fs.existsSync(exe)) return; try { require('child_process').spawn(exe, [String(delay || 0)], { detached: true, stdio: 'ignore' }).unref(); } catch (e) { logLine('WARN', 'fokus: ' + e.message); } }
 setInterval(() => { try { youthNotifyTick(); } catch (e) { logLine('WARN', 'notif: ' + e.message); } }, 60000);
@@ -456,6 +476,16 @@ async function jembatan(lines) {
   return { ok: false, error: 'FM tidak menjawab — pastikan FM terbuka dengan save dimuat dan plugin Jembatan v0.2 aktif (tutup-buka FM sekali).' };
 }
 function jembatanStatus() { try { return fs.readFileSync(path.join(JB_DIR, 'status.txt'), 'utf8'); } catch { return null; } }
+// Sedang di dalam laga? (dari perekam Jembatan: kick-off/lanjut laga vs keluar laga/hasil instan/lanjutkan game)
+function laga() {
+  try {
+    const f = path.join(JB_DIR, 'event.log'), st = fs.statSync(f); if (Date.now() - st.mtimeMs > 3 * 3600000) return false;
+    const n = Math.min(st.size, 400000), fd = fs.openSync(f, 'r'), b = Buffer.alloc(n); fs.readSync(fd, b, 0, n, st.size - n); fs.closeSync(fd);
+    const t = b.toString('utf8').split('\n');
+    for (let i = t.length - 1; i >= 0; i--) { const m = t[i].match(/\tEventFmx(MatchKickedOff|MatchStart|ExitMatch|RequestInstantResult|ContinueGame|LoadGame|RequestQuitGame)\t/); if (m) return m[1] === 'MatchKickedOff' || m[1] === 'MatchStart'; }
+  } catch { }
+  return false;
+}
 // Mode Comeback hanya untuk satu laga: otomatis dikembalikan begitu tanggal game berganti (laga selesai)
 setInterval(async () => {
   try {
@@ -686,7 +716,8 @@ const server = http.createServer(async (req, res) => {
     if (p === '/api/shutdown' && req.method === 'POST') { send(res, 200, { ok: true }); setTimeout(() => process.exit(0), 200); return; }
     // Kolom CA/PA di tabel FM (native/kolom.exe): nama hasil OCR → "ca pa" per baris ("-" bila tidak dikenali)
     if (p === '/api/kolom' && req.method === 'POST') {
-      const b = await body(req); const names = Array.isArray(b.names) ? b.names.slice(0, 200) : [];
+      const b = await body(req); const names = Array.isArray(b.names) ? b.names.slice(0, 400) : [];
+      if (b.strict) return send(res, 200, { rows: names.map(n => { const x = kolomStrict(String(n || '')); return x ? x.ca + ' ' + x.pa : '-'; }) });
       return send(res, 200, { rows: names.map(n => { const x = kolomMatch(String(n || ''), b.pos); return x ? x.ca + ' ' + x.pa : '-'; }) });
     }
     if (p === '/api/fmopen') {
@@ -712,18 +743,19 @@ const server = http.createServer(async (req, res) => {
       const dash = dashboard();
       if (!ofis) return send(res, 200, { ok: false, error: 'Data karier Teknik Oda (ofis.json) belum ada — buka Teknik Oda & muat save.', dash });
       const season = src.season ? readJSON(src.season, null) : null, club = myClub();
-      let latihan = null; try { latihan = LT.build({ ofis, season, players: DB.players.filter(x => x.club === club), staff: DB.staff.filter(x => x.club === club), offset: 0, gameDate: DB.meta && DB.meta.gameDate }); } catch (e) { logLine('WARN', 'kantor/latihan: ' + e.message); }
+      let latihan = null; try { latihan = LT.build({ ofis, season, players: DB.players.filter(x => x.club === club), staff: DB.staff.filter(x => x.club === club), offset: 0, gameDate: DB.meta && DB.meta.gameDate, metode: ltMetode() }); } catch (e) { logLine('WARN', 'kantor/latihan: ' + e.message); }
       return send(res, 200, { ...KT.build({ E, DB, club, lite, dash, ofis, season, targets: readJSON(TF_FILE(), []), shortlist: readJSON(SHORT_FILE(), []), latihan }), dash });
     }
     if (p === '/api/search') return send(res, 200, search(q));
     if (p === '/api/attrmeta') return send(res, 200, { groups: E.GROUPS, labels: E.ATTR_LABEL, divs: [...new Set(DB.players.map(x => x.div).filter(Boolean))].sort(), nats: [...new Set(DB.players.flatMap(x => x.nat || []))].sort() });
+    if (p === '/api/latihan/metode' && req.method === 'POST') { const b = await body(req); fs.writeFileSync(LT_METODE, JSON.stringify({ metode: b.metode === 'klasik' ? 'klasik' : 'optimal' })); return send(res, 200, { metode: ltMetode() }); }
     if (p === '/api/latihan') {
       const src = LT.findSrc(LOCAL, myClub());
       if (!src) return send(res, 200, { ok: false, error: !myClub() ? 'Anda sedang tanpa klub di save ini. Jadwal latihan muncul lagi setelah Anda menerima pekerjaan di FM — lihat daftar lowongan di Ruang Manajer.' : 'Data karier Teknik Oda untuk klub ini belum ada. Buka Teknik Oda, muat save di FM, lalu tunggu Teknik Oda selesai membaca.' });
       const ofis = readJSON(src.ofis, null), season = src.season ? readJSON(src.season, null) : null;
       if (!ofis) return send(res, 200, { ok: false, error: 'Berkas ofis.json Teknik Oda tidak terbaca. Coba lagi beberapa detik lagi.' });
       const club = myClub();
-      const r = LT.build({ ofis, season, players: DB.players.filter(x => x.club === club), staff: DB.staff.filter(x => x.club === club), offset: Math.max(0, Math.min(3, Number(q.w) || 0)), gameDate: DB.meta && DB.meta.gameDate });
+      const r = LT.build({ ofis, season, players: DB.players.filter(x => x.club === club), staff: DB.staff.filter(x => x.club === club), offset: Math.max(0, Math.min(3, Number(q.w) || 0)), gameDate: DB.meta && DB.meta.gameDate, metode: ltMetode() });
       r.updated = ofis.zaman || new Date(src.mtime).toISOString();
       r.cek = ((readJSON(LT_FILE(), {}).cek) || {})[r.week.start] || {};
       return send(res, 200, r);
@@ -739,7 +771,7 @@ const server = http.createServer(async (req, res) => {
       // Pasang "Fokus Tambahan" rekomendasi ke FM lewat plugin Jembatan (memutar ulang event ganti-fokus FM sendiri)
       const b = await body(req); const ids = Array.isArray(b.ids) && b.ids.length ? new Set(b.ids.map(Number)) : null;
       const src = LT.findSrc(LOCAL, myClub()), season = src && src.season ? readJSON(src.season, null) : null, club = myClub();
-      const d = ID.build({ E, players: DB.players.filter(x => x.club === club), staff: DB.staff.filter(x => x.club === club), season, club });
+      const d = ID.build({ E, players: DB.players.filter(x => x.club === club), staff: DB.staff.filter(x => x.club === club), season, club, metode: ltMetode() });
       const pick = d.rows.filter(r => (!ids || ids.has(r.id)) && (!b.team || r.team === b.team));
       const ok = pick.filter(r => r.pers && r.fmFocus), skipped = pick.filter(r => !(r.pers && r.fmFocus)).map(r => ({ name: r.name, why: !r.pers ? 'regen (nomor internal belum diketahui)' : r.role && r.role.pos === 'GK' ? 'kiper (katalog fokus kiper belum direkam)' : 'tidak ada fokus yang dibutuhkan' }));
       if (!ok.length) return send(res, 200, { ok: false, error: 'Tidak ada pemain yang bisa diterapkan.', skipped });
@@ -755,7 +787,7 @@ const server = http.createServer(async (req, res) => {
     }
     if (p === '/api/latihan/individu') {
       const src = LT.findSrc(LOCAL, myClub()), season = src && src.season ? readJSON(src.season, null) : null, club = myClub();
-      return send(res, 200, { ...ID.build({ E, players: DB.players.filter(x => x.club === club), staff: DB.staff.filter(x => x.club === club), season, club }), applied: readJSON(cfile('fokus-diterapkan.json'), {}), jembatan: jembatanStatus() });
+      return send(res, 200, { ...ID.build({ E, players: DB.players.filter(x => x.club === club), staff: DB.staff.filter(x => x.club === club), season, club, metode: ltMetode() }), applied: readJSON(cfile('fokus-diterapkan.json'), {}), jembatan: jembatanStatus() });
     }
     if (p === '/api/latihan/cek' && req.method === 'POST') {
       const b = await body(req); const d = readJSON(LT_FILE(), {}); d.cek = d.cek || {};
@@ -868,11 +900,48 @@ const server = http.createServer(async (req, res) => {
     if (p === '/api/cheat/scope') { const s = resolveScope(q); return send(res, 200, { count: s.length, sample: s.slice(0, 5).map(x => x.name) }); }
     if (p === '/api/versi') { try { return send(res, 200, await VS.status(q.force === '1')); } catch (e) { return send(res, 200, { app: APP, mode: 'error', msg: e.message }); } }
     // Hancurkan tim: target = klub tertentu atau semua klub di liga (liga tim senior); klub saya selalu dilewati.
+    // Unlockables bawaan FM (semua pemain tertarik, tak bisa dipecat, scouting tanpa batas, masking)
+    if (p === '/api/unlock') {
+      const vs = await VS.status().catch(() => null); if (vs && vs.mode === 'terkunci') return send(res, 423, { error: vs.msg });
+      const m = mgrRow(); if (!m) return send(res, 200, { error: 'Data manajer belum terbaca dari Teknik Oda' });
+      try {
+        let f; if (req.method === 'POST') { const b = await body(req); f = await CH.unlockSet(myIds(), m.id, String(b.key), !!b.on); } else f = await CH.unlockFlags(myIds(), m.id);
+        return send(res, 200, { minat: f.minat, pecat: f.pecat, scout: f.scout, masking: f.masking });
+      } catch (e) { return send(res, 200, { error: e.message }); }
+    }
+    // Laporan pemandu bakat (rekomendasi di Pusat Pemandu Bakat FM, dari Teknik Oda)
+    if (p === '/api/pandu') {
+      const src = LT.findSrc(LOCAL, myClub()), of = src ? readJSON(src.ofis, null) : null, g = (of && of.gozlem) || {};
+      const done = readJSON(cfile('dof-target.json'), {});
+      const rows = (g.oneri || []).map(id => DB.byId.get(Number(id))).filter(Boolean).map(x => ({ ...lite(x), can: x.dbi > 0 && x.dbi < 4294967295, dof: done[x.id] || null }));
+      return send(res, 200, { focus: g.odak || null, total: g.toplamOneri || rows.length, windowOpen: !!g.pencereAcik, windowDays: g.pencereGun, rows });
+    }
+    // Tugaskan Direktur Olahraga/manajemen mengejar banyak pemain sekaligus (event asli FM: AddDofTarget, transfer permanen)
+    if (p === '/api/dof' && req.method === 'POST') {
+      const b = await body(req), ids = (Array.isArray(b.ids) ? b.ids : []).map(Number).slice(0, 60);
+      if (laga()) return send(res, 200, { ok: false, error: 'Sedang di dalam laga. Coba lagi setelah laga selesai.' });
+      const m = mgrRow(); if (!m || !(m.dbi > 0)) return send(res, 200, { ok: false, error: 'Nomor internal manajer belum terbaca dari Teknik Oda.' });
+      const all = ids.map(i => DB.byId.get(i)).filter(Boolean), me = myClub();
+      const ok = all.filter(x => x.club !== me && x.dbi > 0 && x.dbi < 4294967295);
+      const skipped = all.filter(x => !ok.includes(x)).map(x => ({ name: x.name, why: x.club === me ? 'pemain Anda sendiri' : 'regen (nomor internal tidak diketahui)' }));
+      if (!ok.length) return send(res, 200, { ok: false, error: 'Tidak ada pemain yang bisa ditugaskan.', skipped });
+      let club; try { club = 0x03000000 + await CH.clubDbi(myIds()); } catch (e) { return send(res, 200, { ok: false, error: e.message }); }
+      const hum = 0x01000000 + m.dbi, ke = `825307168:39,1198877028:G,1348620377:${hum},1668052322:${club}`;
+      const r = await jembatan(ok.map(x => `kirim 859393332 ke=${ke} ref=825307168:38,1145468020:-1,1164201830:0,1198877028:G,1348620377:${hum},1349809236:4,1483434337:${0x01000000 + x.dbi},1668052322:${club}`));
+      if (!r.ok) return send(res, 200, { ok: false, error: r.error, skipped });
+      const lines = r.hasil.split('\n').filter(l => /^(OK kirim|GAGAL)/.test(l)), fail = lines.filter(l => l.startsWith('GAGAL'));
+      const log = readJSON(cfile('dof-target.json'), {}); ok.forEach((x, i) => { if (lines[i] && lines[i].startsWith('OK')) log[x.id] = { at: new Date().toISOString(), game: DB.meta && DB.meta.gameDate }; });
+      fs.writeFileSync(cfile('dof-target.json'), JSON.stringify(log)); logLine('INFO', `DoF target: ${lines.length - fail.length} pemain dikirim, gagal ${fail.length}`);
+      return send(res, 200, { ok: lines.length > fail.length, sent: lines.length - fail.length, failed: fail.length, error: fail.length === lines.length ? (fail[0] || 'FM tidak menjawab').replace(/^GAGAL .*:: /, '') : null, skipped });
+    }
     if (p === '/api/comeback' || p === '/api/comeback/restore') {
       const F = path.join(__dirname, 'data', 'cheat', 'comeback.json');
       const st = (() => { try { return JSON.parse(fs.readFileSync(F, 'utf8')); } catch { return { undo: [] }; } })();
       const save = x => { fs.mkdirSync(path.dirname(F), { recursive: true }); fs.writeFileSync(F, JSON.stringify(x)); };
-      if (req.method !== 'POST') return send(res, 200, { active: (st.undo || []).length > 0, ...st });
+      if (req.method !== 'POST') {
+        const s0 = LT.findSrc(LOCAL, myClub()), of0 = s0 ? readJSON(s0.ofis, null) : null, nx = of0 && of0.siradaki;
+        return send(res, 200, { active: (st.undo || []).length > 0, ...st, live: laga(), next: nx ? { club: nx.rakipKulup || nx.rakip, name: nx.rakip, date: nx.tarih } : null });
+      }
       const vs = await VS.status().catch(() => null); if (vs && vs.mode === 'terkunci') return send(res, 423, { error: vs.msg });
       try {
         if (p === '/api/comeback/restore') {
@@ -880,6 +949,8 @@ const server = http.createServer(async (req, res) => {
           save({ undo: [] }); logLine('INFO', 'comeback dikembalikan: ' + ok + ' penulisan'); return send(res, 200, { ok });
         }
         const b = await body(req); const me = myClub();
+        if (laga()) return send(res, 409, { error: 'Laga sudah kick-off. FM mengunci kemampuan pemain saat kick-off, jadi boost sekarang tidak berpengaruh. Aktifkan sebelum kick-off laga berikutnya.' });
+        if ((st.undo || []).length) return send(res, 409, { error: 'Mode Comeback sudah aktif. Tekan Kembalikan dulu bila ingin mengganti pilihan.' });
         const mine = DB.players.filter(x => x.club === me).map(x => x.id);
         if (!mine.length) return send(res, 400, { error: 'Klub Anda tidak ditemukan' });
         const out = { undo: [...(st.undo || [])], at: Date.now(), power: b.power, opp: b.opp || '', gameDate: (st.undo || []).length ? st.gameDate : (DB.meta && DB.meta.gameDate) || null };
@@ -940,7 +1011,7 @@ const server = http.createServer(async (req, res) => {
         r = { ...(await CH.citizenship(uids, ref.id)), nat: natName };
       }
       else if (a === 'rep') r = await CH.teamRep(DB.players.filter(p => p.club === myClub()).map(p => p.id), Number(P.value || 9999));
-      else if (a === 'love') r = await CH.managerLove(uids, DB.players.filter(p => p.club === myClub()).map(p => p.id));
+      else if (a === 'love') r = await CH.managerLove(uids, myIds(), (mgrRow() || {}).id);
       else if (a === 'legend') { const x = people[0]; r = await CH.legendApply(x.id, P.legend, { ...P, name: x.name, age: P.age || x.age }); }
       else if (a === 'register') r = await CH.register(uids, (Array.isArray(P.codes) ? P.codes : [8]).map(Number).filter(c => [0, 8, 19].includes(c)));
       else return send(res, 400, { error: 'aksi?' });

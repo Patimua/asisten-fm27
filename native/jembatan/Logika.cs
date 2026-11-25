@@ -4,6 +4,7 @@
 // • Pelaksana: membaca perintah.txt (ditulis Asisten), menjalankan, menulis hasil ke hasil.txt.
 //   Format baris:  ping
 //                  dump <eventID>
+//                  kirim <eventID> ke=<kode:nilai,...> ref=<kode:nilai,...>  (tanpa cetakan; G = kode sesi)
 //                  replay <eventID> [pers=<id internal>] [set=<kunci>[/<kunci>]:<s|b|i|n>:<nilai>;...]
 //   s = teks, b = true/false, i = bilangan bulat, n = DynamicNumber. pers = 0x01000000 + dbi pemain (lihat Asisten).
 using System;
@@ -16,7 +17,7 @@ using SI.Core;
 
 public static class Logika
 {
-    public static string Versi = "1.3";
+    public static string Versi = "1.4";
     const uint PERS = 1348825715; // kode tipe "Pers" di referensi
     const uint GUID = 1198877028; // kode sesi game (berubah tiap save dimuat)
     static int lastGuid = -1;
@@ -33,7 +34,7 @@ public static class Logika
         {
             string name; try { name = ((InteropEventIDs)id).ToString(); } catch { name = id.ToString(); }
             string ident = Ident(r);
-            int g; if (r != null && r.TryGetValue(GUID, out g)) lastGuid = g;
+            int g; if (r != null && r.TryGetValue(GUID, out g) && g != lastGuid) { lastGuid = g; try { File.WriteAllText(Path.Combine(Dir, "sesi.txt"), Environment.ProcessId + " " + g); } catch { } }
             TypedValue copy = null; try { copy = d == null ? null : TypedValue.CreateCopyFrom(d); } catch { }
             if (!replaying) tpl[id] = new Tpl { Ident = ident, Data = copy, Name = name, Guid = lastGuid };
             if (count++ > 30000) return;
@@ -110,6 +111,7 @@ public static class Logika
         string op = parts[0];
         if (op == "ping") return "ping versi " + Versi + " · cetakan: " + tpl.Count + " · sesi " + lastGuid;
         uint id = uint.Parse(parts[1]);
+        if (op == "kirim") return Kirim(sub, id, parts.Length > 2 ? parts[2] : "");
         if (op == "punya") { Tpl q; return "punya " + id + " " + (!tpl.TryGetValue(id, out q) ? "tidak" : q.Guid == lastGuid ? "ya" : "lain"); } // cek cetakan tanpa melempar galat
         Tpl t; if (!tpl.TryGetValue(id, out t)) throw new Exception("belum ada cetakan untuk event " + id + " — lakukan sekali secara manual di FM");
         if (t.Guid != lastGuid) throw new Exception("cetakan dari save/sesi lain — belum ada cetakan untuk event " + id + " di save ini; lakukan sekali secara manual di FM");
@@ -139,6 +141,25 @@ public static class Logika
         replaying = true;
         try { sub.SendEvent(id, r, data); } finally { replaying = false; }
         return "replay " + t.Name + " pers=" + pers + " set=" + sets;
+    }
+
+    static string Kirim(GameInteropSubsystem sub, uint id, string arg)
+    {
+        if (id != 859393332u) throw new Exception("event " + id + " tidak diizinkan"); // hanya AddDofTarget
+        if (lastGuid < 0)
+        {
+            try { var p = File.ReadAllText(Path.Combine(Dir, "sesi.txt")).Split(' '); if (int.Parse(p[0]) == Environment.ProcessId) lastGuid = int.Parse(p[1]); } catch { }
+        }
+        if (lastGuid < 0) throw new Exception("sesi save belum dikenal - klik apa saja di FM (mis. buka pesan), lalu coba lagi");
+        string ke = null, rf = null;
+        foreach (var kv in arg.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)) { if (kv.StartsWith("ke=")) ke = kv.Substring(3); else if (kv.StartsWith("ref=")) rf = kv.Substring(4); }
+        if (ke == null || rf == null) throw new Exception("ke/ref kosong");
+        var r = BuatRef(ke.Replace(":G", ":" + lastGuid), -1);
+        var v = BuatRef(rf.Replace(":G", ":" + lastGuid), -1);
+        TypedValue data = TypedValue.Create<InteropReference>(v);
+        replaying = true;
+        try { sub.SendEvent(id, r, data); } finally { replaying = false; }
+        return "kirim " + id;
     }
 
     static InteropReference BuatRef(string ident, int pers)

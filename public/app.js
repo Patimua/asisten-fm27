@@ -97,6 +97,7 @@ const ROUTES = [
   { id: 'panduan', hint: 'Atribut kunci per posisi & standar kelas dunia', name: 'Panduan Rekrutmen', icon: 'trophy', fn: pPanduan },
   { id: 'peran', hint: 'Cari pemain untuk peran tertentu', name: 'Pencari Peran', icon: 'target', fn: pPeran },
   { id: 'target', hint: 'Incaran transfer & sesi minta DoF menawar', name: 'Target Transfer', icon: 'star', fn: pTarget },
+  { id: 'pandu', hint: 'Rekomendasi pemandu bakat: pilih banyak, tugaskan DoF', name: 'Laporan Pemandu', icon: 'scout', fn: pPandu },
   { id: 'tawaran', hint: 'Pemain yang Anda tawar di FM: sudah gabung atau belum, per posisi', name: 'Tawaran Saya', icon: 'list', fn: pTawaran },
   { id: 'pantau', hint: 'Pemain yang Anda tandai', name: 'Daftar Pantau', icon: 'list', fn: pPantau },
   { id: 'banding', hint: 'Bandingkan hingga 3 pemain', name: 'Bandingkan', icon: 'cmp', fn: pBanding },
@@ -108,7 +109,7 @@ const ROUTES = [
 ];
 
 // Menu samping ringkas: halaman sejenis digabung jadi satu entri; di halamannya muncul tab untuk berpindah.
-const NAV_GRP = { skuad: 'skuad', xi: 'skuad', akademi: 'skuad', scout: 'cari', database: 'cari', peran: 'cari', panduan: 'cari', target: 'transfer', tawaran: 'transfer', pantau: 'transfer', banding: 'transfer' };
+const NAV_GRP = { skuad: 'skuad', xi: 'skuad', akademi: 'skuad', scout: 'cari', database: 'cari', peran: 'cari', panduan: 'cari', target: 'transfer', pandu: 'transfer', tawaran: 'transfer', pantau: 'transfer', banding: 'transfer' };
 const NAV_GRP_META = { skuad: { name: 'Skuad', icon: 'shirt', hint: 'Pemain, susunan terbaik & akademi' }, cari: { name: 'Cari Pemain', icon: 'scout', hint: 'Scouting, database, pencari peran & panduan' }, transfer: { name: 'Transfer', icon: 'star', hint: 'Target, daftar pantau & bandingkan' } };
 let KT_SUM = null, KT_REQ = false;
 const navBadge = id => { const k = KT_SUM; if (!k || !k.ok) return ''; const v = { skuad: [k.squadN, 0], latihan: [k.training && k.training.issues, 1], target: [k.targetsN, 0], pantau: [k.shortlistN, 0], beranda: [k.jobs && k.jobs.length, 0], akademi: [k.youthN, 0] }[id]; return v && v[0] ? `<span class="nb${v[1] ? ' r' : ''}">${v[0]}</span>` : ''; };
@@ -141,11 +142,11 @@ async function route() {
 const secLabel = h => { const t = (h.childNodes[0] ? h.childNodes[0].textContent : h.textContent) || ''; return t.replace(/^[^A-Za-z0-9À-ÿ]+/, '').replace(/^\d+\s*·\s*/, '').replace(/\s*\(.*\)\s*$/, '').trim().slice(0, 24); };
 // Mode TAB: kartu bertanda [data-tab] — hanya tab aktif yang tampil ([data-keep] selalu tampil)
 let TAB_CUR = {};
-const TAB_SHORT = [[/^Atribut Tanpa Filter/, 'Atribut Tanpa Filter'], [/^Board/, 'Board'], [/^Tim:/, 'Tim'], [/^Push CA/, 'Push CA→PA'], [/^Potensi/, 'Potensi'], [/^Kontrak/, 'Kontrak'], [/^Kondisi/, 'Kondisi'], [/^Izin Kerja/, 'Izin & Klausul'], [/^Klub Menerima/, 'Klub Terima Tawaran'], [/^Klub Superstar/, 'Klub Superstar'], [/^Manajer Disukai Staf/, 'Disukai Staf'], [/^Manajer Disukai/, 'Manajer Disukai'], [/^Registrasi/, 'Registrasi'], [/^Youth/, 'Youth Intake'], [/^Edit per/, 'Edit Atribut'], [/^Riwayat/, 'Riwayat'], [/^Sedang Dipetakan/, 'Segera Hadir'], [/^Mode Comeback/, 'Mode Comeback'], [/^Maksimalkan Atribut Staf/, 'Atribut Staf']];
+const TAB_SHORT = [[/^Atribut Tanpa Filter/, 'Atribut Tanpa Filter'], [/^Board/, 'Board'], [/^Minat Bergabung/, 'Minat Bergabung'], [/^Tim:/, 'Tim'], [/^Push CA/, 'Push CA→PA'], [/^Potensi/, 'Potensi'], [/^Kontrak/, 'Kontrak'], [/^Kondisi/, 'Kondisi'], [/^Izin Kerja/, 'Izin & Klausul'], [/^Klub Menerima/, 'Klub Terima Tawaran'], [/^Klub Superstar/, 'Klub Superstar'], [/^Manajer Disukai Staf/, 'Disukai Staf'], [/^Manajer Disukai/, 'Manajer Disukai'], [/^Registrasi/, 'Registrasi'], [/^Youth/, 'Youth Intake'], [/^Edit per/, 'Edit Atribut'], [/^Riwayat/, 'Riwayat'], [/^Sedang Dipetakan/, 'Segera Hadir'], [/^Mode Comeback/, 'Mode Comeback'], [/^Maksimalkan Atribut Staf/, 'Atribut Staf']];
 // Pusat Cheat: kelompok + penjelasan singkat tiap tab [kelompok, penjelasan, kata kunci]
 const TAB_GROUPS = [['Klub & Board', '🏛️', 'fasilitas, uang, suasana tim'], ['Pertandingan', '⚽', 'bantu menang di laga'], ['Kontrak & Transfer', '🤝', 'beli, jual, gaji, izin'], ['Staf', '🧑‍💼', 'pelatih, scout, fisio'], ['Kuatkan Pemain', '💪', 'pemain Anda jadi lebih bagus'], ['Lawan', '💥', 'buat tim lain mudah dikalahkan'], ['Lainnya', '🧰', 'tampilan FM & riwayat']];
 // Cheat yang tidak memakai kartu "Pilih Cakupan" (punya target sendiri / selalu klub saya)
-const NO_SCOPE = new Set(['Klub Superstar', 'Board', 'Keuangan Klub', 'Youth Intake', 'Hancurkan Tim', 'Mode Comeback', 'Riwayat', 'Segera Hadir', 'Atribut Tanpa Filter']);
+const NO_SCOPE = new Set(['Minat Bergabung', 'Klub Superstar', 'Board', 'Keuangan Klub', 'Youth Intake', 'Hancurkan Tim', 'Mode Comeback', 'Riwayat', 'Segera Hadir', 'Atribut Tanpa Filter']);
 const TAB_META = {
   'Push CA→PA': ['Kuatkan Pemain', 'Naikkan kemampuan sekarang mendekati potensi', 'ca kemampuan naik cepat'],
   'Potensi': ['Kuatkan Pemain', 'Ubah potensi maksimal (PA)', 'pa bakat'],
@@ -155,6 +156,7 @@ const TAB_META = {
   'Youth Intake': ['Kuatkan Pemain', 'Pemain muda baru otomatis berbakat', 'akademi muda intake'],
   'Kontrak': ['Kontrak & Transfer', 'Atur gaji & lama kontrak', 'gaji kontrak'],
   'Izin & Klausul': ['Kontrak & Transfer', 'Izin kerja, klausul rilis, trait', 'work permit klausul trait'],
+  'Minat Bergabung': ['Kontrak & Transfer', 'Semua pemain mau bernegosiasi dengan klub Anda', 'tertarik minat bergabung menolak reputasi pecat'],
   'Klub Terima Tawaran': ['Kontrak & Transfer', 'Klub lain mau menjual ke Anda', 'transfer beli tawaran'],
   'Klub Superstar': ['Kontrak & Transfer', 'Pemain top mau bergabung walau klub Anda kecil', 'yamal mau gabung minat reputasi semua suka'],
   'Registrasi': ['Kontrak & Transfer', 'Daftarkan pemain di kompetisi', 'registrasi daftar liga'],
@@ -641,6 +643,31 @@ function posCards(d, o = {}) {
 function bindPosCards(root) { root.querySelectorAll('.tw-row[data-id]').forEach(tr => tr.onclick = e => { if (e.target.closest('[data-twrm]')) return; openPlayer(Number(tr.dataset.id)); }); }
 
 // Tawaran Saya — semua pemain yang Anda tawar / dekati / negosiasikan di FM, dikelompokkan per posisi.
+// ---------- Laporan Pemandu Bakat: pilih semua → tugaskan DoF/manajemen menegosiasikan transfer ----------
+async function pPandu(page) {
+  const d = await api('/api/pandu'); const sel = new Set(); let pos = '', sort = 'ca';
+  const rowsOf = () => d.rows.filter(r => !pos || String(r.pos).split(', ').includes(pos)).sort((a, b) => sort === 'join' ? (b.join || 0) - (a.join || 0) : sort === 'value' ? (a.value || 0) - (b.value || 0) : (b[sort] || 0) - (a[sort] || 0));
+  const draw = () => {
+    const rows = rowsOf(), able = rows.filter(r => r.can), n = sel.size;
+    page.innerHTML = `<div class="page-head"><div><h1>Laporan Pemandu Bakat</h1><p>${d.focus ? 'Fokus: ' + esc(d.focus) + ' · ' : ''}${d.rows.length} dari ${d.total} rekomendasi terbaca · bursa ${d.windowOpen ? 'buka' : 'tutup' + (d.windowDays ? ' (' + d.windowDays + ' hari lagi)' : '')}</p></div></div>
+    <div class="card" style="position:sticky;top:0;z-index:20;margin-bottom:12px"><div class="row-flex" style="gap:10px;flex-wrap:wrap;align-items:center">
+      <label class="chk"><input type="checkbox" id="pdAll"${able.length && able.every(r => sel.has(r.id)) ? ' checked' : ''}> <b>Pilih semua (${able.length})</b></label>
+      <select class="inp" id="pdPos"><option value="">Semua posisi</option>${[...new Set(d.rows.flatMap(r => String(r.pos).split(', ')))].sort().map(x => `<option${x === pos ? ' selected' : ''}>${esc(x)}</option>`).join('')}</select>
+      <select class="inp" id="pdSort">${[['ca', 'CA tertinggi'], ['pa', 'PA tertinggi'], ['join', 'Paling mungkin gabung'], ['value', 'Termurah']].map(([k, t]) => `<option value="${k}"${k === sort ? ' selected' : ''}>${t}</option>`).join('')}</select>
+      <span style="flex:1"></span><button class="btn" id="pdTgt"${n ? '' : ' disabled'}>⭐ Tambah ke Target</button><button class="btn primary" id="pdDof"${n ? '' : ' disabled'}>🤝 Tugaskan DoF negosiasi transfer (${n})</button></div></div>
+    ${rows.length ? `<div class="card"><div class="tbl-wrap"><table class="tbl"><thead><tr><th></th><th>Pemain</th><th>Posisi</th><th class="num">Usia</th><th>CA / PA</th><th class="num">Nilai</th><th>Peluang gabung</th><th>DoF</th></tr></thead><tbody>${rows.map(r => `<tr class="click" data-id="${r.id}"><td><input type="checkbox" data-c="${r.id}"${sel.has(r.id) ? ' checked' : ''}${r.can ? '' : ' disabled title="Regen: nomor internal tidak diketahui"'}></td><td><div class="pname">${ava(r.name, 0, r.id)}<div><b>${esc(r.name)}</b><small>${esc(r.club)}</small></div></div></td><td><span class="badge pos">${esc(r.pos)}</span></td><td class="num">${r.age}</td><td>${capa(r.ca, r.pa)}</td><td class="num">${money(r.value)}</td><td title="${esc(r.joinWhy || '')}">${r.join != null ? Math.round(r.join) + '%' : '—'}</td><td>${r.dof ? `<span class="badge good" title="Dikirim ke FM">ditugaskan</span>` : ''}</td></tr>`).join('')}</tbody></table></div></div>` : '<div class="empty"><h2>Belum ada rekomendasi</h2><p>Buka Teknik Oda dengan save ini dimuat; rekomendasi pemandu bakat akan muncul di sini.</p></div>'}`;
+    $('#pdAll').onchange = e => { able.forEach(r => e.target.checked ? sel.add(r.id) : sel.delete(r.id)); draw(); };
+    $('#pdPos').onchange = e => { pos = e.target.value; draw(); }; $('#pdSort').onchange = e => { sort = e.target.value; draw(); };
+    page.querySelectorAll('[data-c]').forEach(c => { c.onclick = e => e.stopPropagation(); c.onchange = () => { const i = Number(c.dataset.c); c.checked ? sel.add(i) : sel.delete(i); draw(); }; });
+    page.querySelectorAll('tr[data-id]').forEach(tr => tr.onclick = () => openPlayer(Number(tr.dataset.id)));
+    $('#pdTgt').onclick = async () => { let k = 0; for (const i of sel) { try { await post('/api/targets', { action: 'add', id: i }); k++; } catch { } } await loadTargets().catch(() => {}); toast(`⭐ ${k} pemain masuk Target Transfer`, 'ok'); };
+    $('#pdDof').onclick = async () => {
+      if (!(await ask({ icon: '🤝', title: `Tugaskan DoF mengejar ${sel.size} pemain?`, ok: 'Tugaskan', body: '<p>Pemain dimasukkan ke <b>Target Transfer Direktur Olahraga</b> di FM (transfer permanen). DoF/manajemen lalu menegosiasikan sesuai tanggung jawab transfer dan anggaran Anda.</p><p class="muted">FM harus terbuka dengan save dimuat dan tidak sedang memproses hari. Bisa dihapus di FM: Rekrutmen → Target Transfer.</p>' }))) return;
+      try { const r = await post('/api/dof', { ids: [...sel] }); if (!r.ok) toast('Gagal: ' + (r.error || 'FM menolak')); else { toast(`🤝 ${r.sent} pemain ditugaskan ke DoF${r.failed ? ' · ' + r.failed + ' gagal' : ''}${r.skipped && r.skipped.length ? ' · ' + r.skipped.length + ' dilewati' : ''}`, 'ok'); sel.clear(); Object.assign(d, await api('/api/pandu')); draw(); } } catch (e) { toast('Gagal: ' + e.message); }
+    };
+  };
+  draw();
+}
 async function pTawaran(page) {
   let hideTarget = (() => { try { return localStorage.getItem('twHide') !== '0'; } catch { return true; } })();
   const draw = d => {
@@ -1095,6 +1122,10 @@ async function pCheat(page) {
       <p class="muted" style="margin:8px 0 0;font-size:12px">Klausul rilis di kontrak pemain dalam cakupan diubah menjadi <b>biaya minimum</b> senilai pilihan. Aturan FM: tawaran yang memenuhi klausul ini <b>wajib diterima klub</b> (keputusan akhir tetap di tangan pemain). Bila kontrak tidak punya klausul rilis, satu klausul bonus (bayaran tampil/cadangan) diubah menjadi klausul rilis. Tidak berlaku bila kontrak tak punya keduanya.</p></div>
     <div class="card"><h3>⭐ Klub Superstar <small>pemain top mau bergabung</small></h3><div class="row-flex"><span class="muted">Reputasi klub →</span><select id="repVal" class="inp"><option value="9999" selected>9999 · terbesar di dunia</option><option value="9000">9000 · elite Eropa</option><option value="8000">8000 · papan atas</option></select><button class="btn primary" id="repBtn">Terapkan ke klub saya</button></div>
       <p class="muted" style="margin:8px 0 0;font-size:12px">Pemain FM memutuskan mau/tidak berunding terutama dari <b>reputasi klub tujuan</b> dibanding klubnya sekarang. Reputasi tim utama Anda dinaikkan, jadi bintang seperti Yamal mau datang walau Anda di League One. Gabungkan dengan <b>Klub Menerima Tawaran</b> (klub penjual) dan <b>Manajer Disukai</b>. Efek samping: ekspektasi board & media ikut naik — kembalikan lewat <b>Riwayat → Batalkan</b> setelah transfer selesai.</p></div>
+    <div class="card"><h3>🌟 Minat Bergabung <small class="muted" id="ulInfo"></small></h3>
+      <p class="muted" style="margin:0 0 10px;font-size:13px">Saklar bawaan FM di data manajer Anda. <b>Semua pemain tertarik</b> membuat pemain mau bernegosiasi walau klub Anda kecil. "Manajer disukai" saja tidak cukup, karena FM menilai minat terutama dari reputasi klub, peran, dan gaji.</p>
+      ${[['minat', 'Semua pemain tertarik bergabung'], ['pecat', 'Manajer tidak bisa dipecat']].map(([k, t]) => `<label class="row-flex" style="gap:10px;padding:7px 0;cursor:pointer"><span class="sw"><input type="checkbox" data-ul="${k}" disabled><span></span></span><b>${t}</b></label>`).join('')}
+      <p class="muted" style="margin:8px 0 0;font-size:12px">Belum teruji di FM27 untuk minat & pemecatan (letak saklarnya sama dengan atribut masking yang sudah terbukti). Setelah menyalakan, buka ulang profil pemain. Masih ditolak? Naikkan ⭐ Klub Superstar.</p></div>
     <div class="card"><h3>❤️ Manajer Disukai Semua</h3><div class="row-flex"><button class="btn primary" id="loveBtn">Buat semua menyukai saya</button></div>
       <p class="muted" style="margin:8px 0 0;font-size:12px">Hubungan setiap orang dalam cakupan dengan Anda (sebagai manajer) dinaikkan ke tingkat tertinggi; yang belum punya hubungan ditambahkan. Berlaku untuk pemain <b>dan</b> staf — pilih "Staf" di Cakupan untuk staf.</p></div>
     <div class="card"><h3>📝 Registrasi Kompetisi <small>tetap bisa walau masa daftar sudah tutup</small></h3><div class="row-flex"><button class="btn" data-reg="8">Liga domestik</button><button class="btn" data-reg="19">Piala domestik</button><button class="btn" data-reg="0">Kompetisi Eropa</button><button class="btn primary" data-reg="8,19,0">Semua kompetisi</button></div>
@@ -1111,6 +1142,7 @@ async function pCheat(page) {
       <p class="muted" style="margin:8px 0 0;font-size:12px">Setiap klub di-boost <b>tepat saat youth intake-nya sendiri tiba</b> (jadwal per negara). Pemain intake yang sudah datang sebelum booster diaktifkan tidak disentuh. Asisten harus tetap terbuka saat hari intake lewat. Mengganti pilihan saat aktif langsung tersimpan. Kemampuan saat ini (CA) dibiarkan, jadi mereka berkembang lewat latihan. Bisa dibatalkan di Riwayat.</p></div>
     <div class="card" id="cbCard"><h3>⚡ Mode Comeback <small class="muted" id="cbInfo"></small></h3>
       <p class="muted" style="margin:0 0 10px;font-size:13px">Untuk membalikkan laga: <b>tim Anda</b> dibuat super (atribut ×power sampai maks 20, mental & tersembunyi terbaik, kondisi & ketajaman 100%, moral maksimum), dan <b>lawan</b> bisa sekalian dilemahkan (CA, atribut, mental). Aktifkan saat jeda/sebelum laga atau ketika tertinggal. <b>Hanya untuk laga ini:</b> semua perubahan (termasuk CA/PA sementara) <b>dikembalikan otomatis</b> begitu tanggal game berganti — atau tekan <b>Kembalikan</b> sendiri. ⚠️ Jangan simpan game saat mode aktif.</p>
+      <div class="note warn" id="cbWarn" style="margin-bottom:10px"></div>
       <div class="field" style="margin:4px 0 6px"><label>Power tim saya</label></div>
       <div class="stage-row">${[[1.5, 'Kuat', '×150%'], [2, 'Super', '×200%'], ['max', 'Dewa', 'semua 20']].map(([v, n, s], i) => `<button class="stage s${i + 2}${i === 1 ? ' on' : ''}" data-cb="${v}"><b>${n}</b><small>${s}</small></button>`).join('')}</div>
       <div class="ybox" style="margin-top:12px"><div class="field"><label>Lawan (opsional)</label><input id="cbOpp" list="cbList" placeholder="Ketik nama klub lawan…"><datalist id="cbList"></datalist></div>
@@ -1254,7 +1286,7 @@ async function pCheat(page) {
   // ---- Hancurkan Tim ----
   let cbP = 2;
   $('#cbList').innerHTML = LISTS.clubs.slice(0, 1500).map(x => `<option value="${esc(x.k)}">`).join('');
-  const cbStat = async () => { const s = await api('/api/comeback').catch(() => null); $('#cbInfo').textContent = s && s.active ? `AKTIF${s.opp ? ' · lawan ' + s.opp : ''}` : ''; $('#cbBack').disabled = !(s && s.active); };
+  const cbStat = async () => { const s = await api('/api/comeback').catch(() => null); if (s && s.next && !$('#cbOpp').value && !$('#cbOpp').dataset.t) { $('#cbOpp').value = s.next.club; $('#cbOpp').dataset.t = '1'; } const cw = $('#cbWarn'); if (cw) { cw.className = 'note ' + (s && s.live ? 'bad-note' : 'warn'); cw.innerHTML = s && s.live ? '⛔ <b>Laga sudah kick-off.</b> FM mengunci kemampuan pemain saat kick-off, jadi boost sekarang tidak berpengaruh.' : `✅ Aktifkan <b>sebelum kick-off</b>${s && s.next ? ` · laga berikutnya: <b>${esc(s.next.name)}</b> (${fmtDate(s.next.date)})` : ''}. Otomatis kembali setelah tanggal game berganti.`; $('#cbGo').disabled = !!(s && (s.live || s.active)); } $('#cbInfo').textContent = s && s.active ? `AKTIF${s.opp ? ' · lawan ' + s.opp : ''}` : ''; $('#cbBack').disabled = !(s && s.active); };
   cbStat();
   page.querySelectorAll('[data-cb]').forEach(b => b.onclick = () => { cbP = b.dataset.cb === 'max' ? 'max' : Number(b.dataset.cb); page.querySelectorAll('[data-cb]').forEach(x => x.classList.toggle('on', x === b)); });
   $('#cbGo').onclick = async () => {
@@ -1292,6 +1324,9 @@ async function pCheat(page) {
   $('#bpOn').onchange = async e => { const on = e.target.checked; $('#bpSt').textContent = 'memasang…'; try { const r = await post('/api/board', { on }); bpShow(r); if (r.error) toast(r.error); else toast(r.active ? '🏛️ Board selalu setuju: AKTIF' : 'Board kembali normal', 'ok'); } catch (er) { toast('Gagal: ' + er.message); bpShow({ error: er.message }); } };
   $('#boardBtn').onclick = async () => { const r = await runCheat('board', { kind: 'P', type: 'myclub' }, {}, 'Selesaikan permintaan fasilitas board klub saya'); if (r && r.msg) toast(r.msg, 'info'); after(); };
   { const rb = $('#repBtn'); if (rb) rb.onclick = async () => { const v = Number($('#repVal').value); const r = await runCheat('rep', { kind: 'P', type: 'myclub', value: '' }, { value: v }, `Reputasi klub saya → ${v} (hanya klub Anda)`); if (r && r.before) toast(`⭐ Reputasi klub ${r.before} → ${r.after}. Batalkan di Riwayat setelah transfer selesai.`, 'ok'); after(); }; }
+  const ulShow = r => { const i = $('#ulInfo'); if (!i) return; i.textContent = r.error ? r.error : ''; page.querySelectorAll('[data-ul]').forEach(c => { c.disabled = !!r.error; c.checked = !!r[c.dataset.ul]; }); };
+  api('/api/unlock').then(ulShow).catch(e => ulShow({ error: e.message }));
+  page.querySelectorAll('[data-ul]').forEach(c => c.onchange = async () => { try { const r = await post('/api/unlock', { key: c.dataset.ul, on: c.checked }); ulShow(r); toast(r.error ? r.error : (c.checked ? '🌟 Dinyalakan' : 'Dimatikan'), r.error ? 'info' : 'ok'); after(); } catch (e) { toast('Gagal: ' + e.message); ulShow({ error: e.message }); } });
   $('#loveBtn').onclick = async () => { await runCheat('love', scope(), {}, 'Manajer disukai semua orang dalam cakupan'); after(); };
   page.querySelectorAll('[data-reg]').forEach(b => b.onclick = async () => { await runCheat('register', scope(), { codes: b.dataset.reg.split(',').map(Number) }, 'Daftarkan ke ' + b.textContent.toLowerCase()); after(); });
   const COND_LBL = { latih: 'Kebahagiaan latihan maksimal', kompak: 'Kekompakan tim maksimal', bugar: 'Kondisi & ketajaman 100%', cedera: 'Pulihkan semua cedera', ban: 'Hapus larangan bertanding', bahagia: 'Hapus ketidakbahagiaan + moral maksimum', izinkerja: 'Work permit ON', tanpaizin: 'Work permit OFF', klausul: 'Hapus klausul rilis', trait: 'Hapus semua trait' };
@@ -1376,11 +1411,12 @@ async function pLatihan(page) {
     page.innerHTML = `${ltTabs('tim')}
     <div class="page-head"><div><h1>Latihan Mingguan</h1><p>Disusun otomatis dari jadwal laga, kondisi skuad, laporan performa, taktik & kualitas pelatih Anda.</p>
       <div class="lt-head-meta"><span class="badge ok">📅 ${esc(d.week.label)}</span>${d.tactic ? `<span class="badge ok" title="Taktik aktif di FM">♟ ${esc(d.tactic.name)} · ${esc(d.tactic.mentality || '')}</span>` : ''}${d.congested ? '<span class="badge bad">Jadwal padat</span>' : ''}${d.needs && d.needs.mode && d.needs.mode !== 'normal' ? `<span class="badge ${d.needs.mode === 'bagus' ? 'good' : 'bad'}" title="Disesuaikan otomatis dari 5 laga resmi terakhir">${{ perbaikan: '🚨 Mode perbaikan', waspada: '⚠️ Tren menurun', bagus: '🔥 Tim sedang bagus' }[d.needs.mode]} · ${d.needs.form.w}M ${d.needs.form.d}S ${d.needs.form.l}K</span>` : ''}<span class="badge ok" title="Waktu Teknik Oda terakhir membaca FM">Data Teknik Oda ${esc(String(d.updated || '').slice(11, 16))}</span></div></div>
-      <div class="row-flex lt-noprint"><div class="lt-weeks">${['Minggu ini', 'Minggu depan', '+2 minggu'].map((t, i) => `<button data-w="${i}" class="${i === w ? 'on' : ''}">${t}</button>`).join('')}</div>
+      <div class="row-flex lt-noprint"><select id="ltMet" class="inp" title="Metode penyusunan jadwal"><option value="optimal"${d.metode === 'optimal' ? ' selected' : ''}>🧪 Metode Optimal</option><option value="klasik"${d.metode !== 'optimal' ? ' selected' : ''}>Klasik Asisten</option></select><div class="lt-weeks">${['Minggu ini', 'Minggu depan', '+2 minggu'].map((t, i) => `<button data-w="${i}" class="${i === w ? 'on' : ''}">${t}</button>`).join('')}</div>
       ${d.fm ? `<button class="btn" id="ltCmp">${cmp ? 'Sembunyikan' : 'Bandingkan'} jadwal FM</button>` : ''}<button class="btn primary" id="ltApplyTim" title="Pasang rencana ke FM lewat plugin Jembatan">✅ Terapkan ke FM</button><button class="btn" id="ltCopy">📋 Salin jadwal</button><button class="btn" id="ltRe">${ic('refresh', 16)} Muat ulang</button></div></div>
     ${d.fixtures.length ? `<div class="lt-fx">${d.fixtures.map(f => `<div class="f" title="${esc(f.turnuva)}"><span class="ha ${f.evde ? '' : 'a'}">${f.evde ? 'K' : 'T'}</span><div><b>${esc(f.rakip)}</b> <small>${esc(f.kisa || '')}</small><br><small>${f.gun} ${f.tgl}</small></div>${f.gap != null ? `<span class="gap ${f.gap <= 3 ? 'tight' : f.gap <= 4 ? 'mid' : ''}" title="Jarak dari laga sebelumnya">+${f.gap} hr</span>` : ''}</div>`).join('')}</div>` : ''}
     <div class="lt-grid">${d.days.map(day).join('')}</div>
     <div class="lt-legend">${[['Menyerang', 'var(--red)'], ['Penguasaan', 'var(--blue)'], ['Bertahan', 'var(--lt-purple)'], ['Bola Mati', 'var(--gold)'], ['Kebugaran', 'var(--lt-teal)'], ['Pengembangan', 'var(--brand)'], ['Pemulihan', 'var(--lt-grey)']].map(([n, c]) => `<span><i style="--c:${c}"></i>${n}</span>`).join('')}<span>● intensitas sesi</span><span>⚠ pelatih area &lt; 60</span><span>Total beban minggu: <b>${d.load}</b>${d.fm ? ` · FM sekarang: <b>${d.fmLoad}</b>` : ''}</span></div>
+    ${d.steps ? `<details class="card lt-steps"><summary><b>🧪 Cara memakai Metode Optimal di FM</b> <span class="muted">(${d.steps.length} langkah, cukup sekali)</span></summary><ol>${d.steps.map(x => `<li><b>${esc(x[0])}</b> — ${esc(x[1])}</li>`).join('')}</ol><p class="muted" style="font-size:12px">Sumber: Zergos (sortitoutsi 78226) & Fm-Match-Lab studi 24b. Nama "Olah Bola Menyerang" = Attacking Ball Work, "Pengondisian Fisik" = Conditioning; nama di FM bahasa Indonesia bisa sedikit berbeda.</p></details>` : ''}
     <div class="lt-cols">
       <div class="card"><h3>Daftar Tindakan <span class="lt-prog">${done} / ${total} selesai</span></h3><p class="muted" style="margin:2px 0 0;font-size:12.5px">Pemain senior · centang setelah Anda atur di FM (tersimpan per minggu).</p>${d.checklist.length ? d.checklist.map(grp).join('') : '<p class="muted">Tidak ada pemain yang perlu perhatian khusus. 👍</p>'}</div>
       <div class="grid" style="align-content:start">
@@ -1392,6 +1428,7 @@ async function pLatihan(page) {
     bindLtTabs(page);
     page.querySelectorAll('[data-w]').forEach(b => b.onclick = () => { w = Number(b.dataset.w); try { localStorage.setItem('ltWeek', w); } catch { } load(); });
     $('#ltRe').onclick = load;
+    $('#ltMet').onchange = async e => { await post('/api/latihan/metode', { metode: e.target.value }); load(); };
     if ($('#ltCmp')) $('#ltCmp').onclick = () => { cmp = !cmp; try { localStorage.setItem('ltCmp', cmp ? '1' : '0'); } catch { } draw(d); };
     page.querySelectorAll('[data-more]').forEach(b => b.onclick = () => { open[b.dataset.more] = !open[b.dataset.more]; draw(d); });
     page.querySelectorAll('.lt-ck input').forEach(i => i.onchange = async () => { const k = i.dataset.k; if (i.checked) d.cek[k] = true; else delete d.cek[k]; draw(d); try { await post('/api/latihan/cek', { week: d.week.start, key: k, on: i.checked }); } catch (e) { toast('Gagal menyimpan: ' + e.message); } });
@@ -1436,7 +1473,7 @@ async function pLatihanIndividu(page, tab) {
     const youthHtml = `<div class="card" style="margin-bottom:14px"><h3>Faktor Perkembangan Pemain Muda <small>yang menentukan seberapa cepat mendekati PA</small></h3>
         <div class="lt-factors">${d.factors.map(f => `<div class="${f.ok ? 'ok' : 'warn'}"><b>${esc(f.k)}</b><span>${esc(f.v)}</span></div>`).join('')}</div>
         <p class="muted" style="font-size:12.5px;margin:10px 0 0">Kunci di FM: (1) fokus individu ke atribut kunci terlemah, (2) intensitas ganda untuk pemain muda yang segar, (3) menit bermain rutin (tim junior/pinjaman), (4) mentor profesional, (5) pelatih & fasilitas junior bagus.</p></div>
-      <div class="lt-cols" style="margin-top:0">${['u21', 'u18'].map(k => `<div class="card"><h3>Jadwal ${esc(yp[k].title)} <small>${yp[k].devSlots} slot pengembangan individu</small></h3><p class="muted" style="font-size:12.5px;margin:0 0 10px">${esc(yp[k].why)}</p>
+      <div class="lt-cols" style="margin-top:0">${['u21', 'u18'].map(k => `<div class="card"><h3>Jadwal ${esc(yp[k].title)} <small>${yp[k].devSlots ? yp[k].devSlots + ' slot pengembangan individu' : '🧪 Metode Optimal'}</small></h3><p class="muted" style="font-size:12.5px;margin:0 0 10px">${esc(yp[k].why)}</p>
         <div class="lt-mini-week">${yp[k].days.map(x => `<div><b>${x.gun.slice(0, 3)}</b>${x.sessions.map(s => `<span class="lt-s ${cls(s.cat)}"><span class="sn">${esc(s.name)}</span></span>`).join('')}</div>`).join('')}</div>
         <p class="muted" style="font-size:12px;margin:8px 0 0">Laga junior diasumsikan Sabtu — geser bila jadwal tim junior berbeda.</p></div>`).join('')}</div>
       <div class="card" style="margin-top:14px"><h3>Prioritas Pengembangan <small>pemain ≤21 th yang paling cepat bisa naik</small></h3>

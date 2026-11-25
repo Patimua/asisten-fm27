@@ -56,7 +56,7 @@ class Kolom : Form {
     bool show = showWanted && labels.Count > 0;
     if (show) { if (Bounds != fmRect) Bounds = fmRect; if (!Visible) Show(); Invalidate(); }
     else if (Visible) Hide();
-    if ((DateTime.Now - lastOk).TotalSeconds > 90) Environment.Exit(0); // server Asisten mati → keluar
+    if ((DateTime.Now - lastOk).TotalSeconds > 300) Environment.Exit(0); // server Asisten mati → keluar
   }
 
   static R Wait<R>(IAsyncOperation<R> op) { while (op.Status == AsyncStatus.Started) Thread.Sleep(3); if (op.Status != AsyncStatus.Completed) throw new Exception("ocr " + op.Status); return op.GetResults(); }
@@ -104,6 +104,7 @@ class Kolom : Form {
     foreach (var hn in words.Where(x => H_NAME.Contains(x.T.ToLowerInvariant()))) {
       var hp = words.Where(x => H_POS.Contains(x.T.ToLowerInvariant()) && Math.Abs(x.Y - hn.Y) < 6 && x.X > hn.X).OrderBy(x => x.X).FirstOrDefault();
       if (hp == null) continue;
+      if (hp.X < hn.X) continue;
       var nextH = words.Where(x => Math.Abs(x.Y - hn.Y) < 6 && x.X > hp.R + 4).OrderBy(x => x.X).FirstOrDefault();
       double nextX = nextH != null ? nextH.X : hp.X + 260;
       // baris: teks yang mulai di kolom nama (antara judul "Pemain" dan "Posisi"), di bawah judul
@@ -121,24 +122,56 @@ class Kolom : Form {
         outL.Add(new Lbl { X = (int)right, Y = (int)Math.Round(cy - lh / 2.0), H = lh, Ca = v[0], Pa = v[1] }); // X = tepi kanan label
       }
     }
+    if (outL.Count == 0) outL = Bebas(lines, words);
     Dbg("label " + outL.Count);
     return outL;
   }
-  int[][] Lookup(List<string> names) {
-    var miss = names.Where(n => !cache.ContainsKey(n)).Distinct().ToList();
+  // Layar tanpa kolom Posisi di kanan nama (rekrutmen: laporan pemandu bakat, rekomendasi, daftar target, kartu pemain):
+  // cari deretan nama yang sejajar kiri, cocokkan ketat (nama persis & tak bermakna ganda), tempel angka tepat di kanan nama.
+  List<Lbl> Bebas(List<W> lines, List<W> words) {
+    var outL = new List<Lbl>();
+    var cand = new List<W>();
+    foreach (var ln in lines) {
+      // satu baris OCR bisa memuat beberapa sel: pecah bila jarak antarkata lebar
+      var ws = words.Where(x => Math.Abs((x.Y + x.H / 2) - (ln.Y + ln.H / 2)) < ln.H * 0.6 && x.X >= ln.X - 2 && x.R <= ln.R + 2).OrderBy(x => x.X).ToList();
+      W cur = null;
+      foreach (var x in ws) {
+        if (cur != null && x.X - cur.R < Math.Max(cur.H, x.H) * 0.75) { cur.T += " " + x.T; cur.R = x.R; cur.H = Math.Max(cur.H, x.H); }
+        else { if (cur != null) cand.Add(cur); cur = new W { T = x.T, X = x.X, Y = x.Y, R = x.R, H = x.H }; }
+      }
+      if (cur != null) cand.Add(cur);
+    }
+    cand = cand.Where(x => { x.T = Regex.Replace(x.T, @"[^A-Za-zÀ-ÿ'’. -]+", "").Trim(); return Regex.IsMatch(x.T, @"^([A-ZÀ-Þ][.] ?)?[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ'’-]+( [A-Za-zÀ-ÿ'’.-]+){0,4}$") && (x.T.Contains(" ") || x.T.Contains(".")) && x.T.Length >= 5 && x.T.Length <= 34; }).ToList();
+    if (cand.Count < 3 || cand.Count > 260) return outL;
+    var names = cand.Select(x => x.T).ToList(); var vals = Lookup(names, true);
+    if (TEST) for (int q = 0; q < names.Count; q++) Console.WriteLine("  [" + names[q] + "] " + (vals[q] == null ? "-" : "ok") + " x" + (int)cand[q].X + " h" + (int)cand[q].H);
+    var hOk = cand.Where((x, i) => vals[i] != null).Select(x => x.H).OrderBy(x => x).ToList(); double medOk = hOk.Count > 0 ? hOk[hOk.Count / 2] : 0;
+    for (int i = 0; i < cand.Count; i++) {
+      if (vals[i] == null) continue; var c = cand[i]; int near = 0;
+      for (int j = 0; j < cand.Count; j++) if (vals[j] != null && Math.Abs(cand[j].X - c.X) < 14 && Math.Abs(cand[j].H - c.H) < c.H * 0.4) near++;
+      if (near < 3) continue; // minimal 3 nama sejajar = benar-benar daftar pemain
+      int lh = (int)Math.Round(medOk * 1.45); double wid = lh * 3.0;
+      outL.Add(new Lbl { X = (int)(c.R + lh * 0.45 + wid), Y = (int)Math.Round(c.Y + c.H / 2 - lh / 2.0), H = lh, Ca = vals[i][0], Pa = vals[i][1] });
+    }
+    Dbg("bebas: calon " + cand.Count + " cocok " + vals.Count(v => v != null) + " label " + outL.Count);
+    return outL;
+  }
+  int[][] Lookup(List<string> names, bool strict = false) {
+    string px = strict ? "!" : "";
+    var miss = names.Where(n => !cache.ContainsKey(px + n)).Distinct().ToList();
     if (miss.Count > 0) {
       try {
-        var js = "{\"names\":[" + string.Join(",", miss.Select(n => "\"" + n.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"")) + "]}";
+        var js = "{" + (strict ? "\"strict\":true," : "") + "\"names\":[" + string.Join(",", miss.Select(n => "\"" + n.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"")) + "]}";
         var rq = (HttpWebRequest)WebRequest.Create(srv + "/api/kolom"); rq.Method = "POST"; rq.ContentType = "application/json"; rq.Timeout = 3000; rq.Proxy = null;
         var bb = Encoding.UTF8.GetBytes(js); using (var s = rq.GetRequestStream()) s.Write(bb, 0, bb.Length);
         string body; using (var rs = rq.GetResponse()) using (var sr = new StreamReader(rs.GetResponseStream(), Encoding.UTF8)) body = sr.ReadToEnd();
         lastOk = DateTime.Now;
         var ms = Regex.Matches(body, "\"(-|\\d+ \\d+)\"");
-        for (int i = 0; i < miss.Count && i < ms.Count; i++) { var t = ms[i].Groups[1].Value; cache[miss[i]] = t == "-" ? null : t.Split(' ').Select(int.Parse).ToArray(); }
+        for (int i = 0; i < miss.Count && i < ms.Count; i++) { var t = ms[i].Groups[1].Value; cache[px + miss[i]] = t == "-" ? null : t.Split(' ').Select(int.Parse).ToArray(); }
         if (cache.Count > 3000) cache.Clear();
       } catch (Exception ex) { Dbg("api " + ex.Message); }
     }
-    return names.Select(n => cache.ContainsKey(n) ? cache[n] : null).ToArray();
+    return names.Select(n => cache.ContainsKey(px + n) ? cache[px + n] : null).ToArray();
   }
 
   static Color Col(int v) { return v >= 170 ? Color.FromArgb(74, 222, 128) : v >= 140 ? Color.FromArgb(163, 230, 53) : v >= 110 ? Color.FromArgb(250, 204, 21) : v >= 80 ? Color.FromArgb(251, 146, 60) : Color.FromArgb(226, 232, 240); }
