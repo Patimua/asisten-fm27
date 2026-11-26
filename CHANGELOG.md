@@ -2,6 +2,9 @@
 
 Format versi: `27.1.x` = untuk **Football Manager 27 versi 27.1**, build Asisten ke-x.
 
+## 27.1.21 — 27 Nov 2026
+- **Mendukung Teknik Oda 1.1.1:** badge CA/PA di profil pemain FM kini menempel ke logo "T" Teknik Oda yang baru (strip tombol profil 1.1+). Di skin FMU strip itu menyusut jadi logo saja. Tombol Compare lama (Teknik Oda 1.0.x) tetap dikenali. Data pemain, staf, kantor, latihan dan plugin Jembatan sudah dicek dengan 1.1.1 tanpa perubahan.
+
 ## 27.1.20 — 25 Nov 2026
 - **Latihan → Metode Optimal** (bawaan; bisa kembali ke Klasik): jadwal dari Zergos v3 dan studi Fm-Match-Lab 24b, rotasi 5 minggu, menyesuaikan jadwal laga. Fokus individu: Kecepatan, lalu Daya Tahan/Ketahanan. Panduan 8 langkah di halaman Latihan. Jadwal junior mengikuti data 66 uji setahun.
 - **Baru — Laporan Pemandu:** rekomendasi pemandu bakat dengan Pilih semua dan **Tugaskan DoF negosiasi transfer** (memakai perintah asli FM, tanpa contoh manual; butuh plugin Jembatan). *Pengiriman ke FM belum teruji — coba satu pemain dulu.*

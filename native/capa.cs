@@ -58,25 +58,58 @@ class Capa : Form {
     int w = win.Width, h = win.Height; if (w < 400 || h < 300) return Rectangle.Empty;
     using (var bmp = new Bitmap(w, h, PixelFormat.Format32bppArgb)) {
       using (var g = Graphics.FromImage(bmp)) { var dc = g.GetHdc(); try { PrintWindow(fm, dc, 2); } finally { g.ReleaseHdc(dc); } }
-      int x0 = (int)(w * 0.12), x1 = (int)(w * 0.60), y0 = (int)(h * 0.14), y1 = (int)(h * 0.40);
-      var bd = bmp.LockBits(new Rectangle(0, 0, w, h), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
-      try {
-        int stride = bd.Stride; var buf = new byte[stride * h]; Marshal.Copy(bd.Scan0, buf, 0, buf.Length);
-        Func<int, int, bool> or = (x, y) => { int i = y * stride + x * 4; int b = buf[i], gg = buf[i + 1], r = buf[i + 2]; return r > 170 && gg > 85 && gg < 150 && b < 50; };
-        Func<int, int, bool> dark = (x, y) => { int i = y * stride + x * 4; return buf[i] < 20 && buf[i + 1] < 20 && buf[i + 2] < 20; };
-        int bestX = -1, bestT = 0, bestB = 0, minRun = Math.Max(14, h / 80);
-        for (int x = x1; x >= x0; x--) {
-          int run = 0, top = 0;
-          for (int y = y0; y <= y1; y++) {
-            if (or(x, y)) { if (run == 0) top = y; run++; }
-            else { if (run >= minRun && run < h / 12 && x > 6 && dark(x - 4, top + run / 2)) { bestX = x; bestT = top; bestB = top + run; break; } run = 0; }
-          }
-          if (bestX >= 0) break;
-        }
-        if (bestX < 0) { if (DEBUG && (DateTime.Now - lastSnap).TotalSeconds > 8) { lastSnap = DateTime.Now; try { bmp.Save(Path.Combine(Path.GetDirectoryName(Application.ExecutablePath), "capa-snap.png")); Dbg("snap " + w + "x" + h); } catch { } } return Rectangle.Empty; }
-        return new Rectangle(win.Left + bestX, win.Top + bestT - 2, 1, bestB - bestT + 4); // tepi kanan tombol Compare
-      } finally { bmp.UnlockBits(bd); }
+      var a = Locate(bmp);
+      if (a.Height == 0) { if (DEBUG && (DateTime.Now - lastSnap).TotalSeconds > 8) { lastSnap = DateTime.Now; try { bmp.Save(Path.Combine(Path.GetDirectoryName(Application.ExecutablePath), "capa-snap.png")); Dbg("snap " + w + "x" + h); } catch { } } return Rectangle.Empty; }
+      return new Rectangle(win.Left + a.X, win.Top + a.Y, 1, a.Height);
     }
+  }
+
+  // Posisi jangkar di gambar jendela FM: Rectangle(x = tepi kanan jangkar, y, 1, tinggi), atau Empty.
+  //  1. Teknik Oda 1.1+: logo "T" (kotak biru tua #0F1727 berhuruf emas) di awal strip tombol profil. Bila strip lengkap
+  //     (Open profile · Compare · Ask Toby), jangkar diperpanjang ke ujung kanan strip; di layar sempit (mis. skin FMU)
+  //     strip menyusut jadi logo saja.
+  //  2. Teknik Oda 1.0.x: bingkai oranye tombol "Compare".
+  static Rectangle Locate(Bitmap bmp) {
+    int w = bmp.Width, h = bmp.Height;
+    int x0 = (int)(w * 0.12), x1 = (int)(w * 0.75), y0 = (int)(h * 0.10), y1 = (int)(h * 0.40);
+    var bd = bmp.LockBits(new Rectangle(0, 0, w, h), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+    try {
+      int stride = bd.Stride; var buf = new byte[stride * h]; Marshal.Copy(bd.Scan0, buf, 0, buf.Length);
+      Func<int, int, bool> navy = (x, y) => { int i = y * stride + x * 4; int b = buf[i], g = buf[i + 1], r = buf[i + 2]; return r < 30 && g < 40 && b >= 28 && b < 70 && b - r >= 18; };
+      Func<int, int, bool> gold = (x, y) => { int i = y * stride + x * 4; int b = buf[i], g = buf[i + 1], r = buf[i + 2]; return r > 190 && g > 140 && b < 150 && r - b > 80; };
+      Func<int, int, bool> or = (x, y) => { int i = y * stride + x * 4; int b = buf[i], gg = buf[i + 1], r = buf[i + 2]; return r > 170 && gg > 85 && gg < 150 && b < 50; };
+      Func<int, int, bool> dark = (x, y) => { int i = y * stride + x * 4; return buf[i] < 20 && buf[i + 1] < 20 && buf[i + 2] < 20; };
+      int minRun = Math.Max(14, h / 80), maxRun = h / 12;
+
+      // 1. logo Teknik Oda 1.1+: kolom biru tua setinggi tombol yang berisi huruf emas di sebelah kirinya
+      for (int x = x1; x >= x0; x--) {
+        int run = 0, top = 0;
+        for (int y = y0; y <= y1 + 1; y++) {
+          if (y <= y1 && navy(x, y)) { if (run == 0) top = y; run++; continue; }
+          if (run >= minRun && run < maxRun) {
+            int golds = 0;
+            for (int gx = Math.Max(0, x - run); gx < x; gx++) for (int gy = top; gy < top + run; gy++) if (gold(gx, gy)) golds++;
+            if (golds >= run / 2) {
+              // perpanjang ke kanan selama strip (latar biru tua) berlanjut, celah antartombol maks. setinggi tombol
+              int mid = top + run / 2, right = x, gap = 0;
+              for (int xx = x + 1; xx < w && gap <= run; xx++) { if (navy(xx, mid) || navy(xx, top + 2) || navy(xx, top + run - 3)) { right = xx; gap = 0; } else gap++; }
+              return new Rectangle(right + 1, top - 2, 1, run + 4);
+            }
+          }
+          run = 0;
+        }
+      }
+      // 2. tombol Compare berbingkai oranye (Teknik Oda 1.0.x)
+      x1 = Math.Min(x1, (int)(w * 0.60)); y0 = (int)(h * 0.14);
+      for (int x = x1; x >= x0; x--) {
+        int run = 0, top = 0;
+        for (int y = y0; y <= y1; y++) {
+          if (or(x, y)) { if (run == 0) top = y; run++; }
+          else { if (run >= minRun && run < maxRun && x > 6 && dark(x - 4, top + run / 2)) return new Rectangle(x, top - 2, 1, run + 4); run = 0; }
+        }
+      }
+      return Rectangle.Empty;
+    } finally { bmp.UnlockBits(bd); }
   }
   void Tick(object o, EventArgs e) {
     var j = pending; pending = null;
@@ -123,12 +156,13 @@ class Capa : Form {
     using (var lf = new Font("Segoe UI Semibold", H * 0.38f, GraphicsUnit.Pixel)) using (var vf = new Font("Segoe UI", H * 0.42f, FontStyle.Bold, GraphicsUnit.Pixel)) {
       float y = H * 0.36f, x = tx;
       Action<string, Font, Color> put = (s, f, c) => { using (var b = new SolidBrush(c)) { g.DrawString(s, f, b, x, y - (f == vf ? H * 0.03f : 0)); x += g.MeasureString(s, f, PointF.Empty, StringFormat.GenericTypographic).Width + H * 0.06f; } };
-      put("CA", lf, Color.White); put(ca >= 0 ? ca.ToString() : "â€“", vf, Col(ca)); x += H * 0.12f;
-      put("PA", lf, Color.White); put(pa >= 0 ? pa.ToString() : "â€“", vf, Col(pa));
+      put("CA", lf, Color.White); put(ca >= 0 ? ca.ToString() : "-", vf, Col(ca)); x += H * 0.12f;
+      put("PA", lf, Color.White); put(pa >= 0 ? pa.ToString() : "-", vf, Col(pa));
     }
   }
   [STAThread] static void Main(string[] a) {
     try { SetProcessDPIAware(); } catch { }
+    if (a.Length > 1 && a[0] == "test") { using (var b = new Bitmap(a[1])) Console.WriteLine(Locate(b)); return; } // uji offline: capa.exe test <png>
     bool fresh; var mx = new Mutex(true, "AsistenFM27_capa", out fresh); if (!fresh) return;
     Application.EnableVisualStyles();
     Application.Run(new Capa(a.Length > 0 ? a[0] : "http://localhost:2728"));

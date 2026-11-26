@@ -1,4 +1,4 @@
-# Asisten FM27 — v27.1.20 (untuk Football Manager 27, versi 27.1)
+# Asisten FM27 — v27.1.21 (untuk Football Manager 27, versi 27.1)
 
 ## Membuka
 1. Jalankan FM27 dan muat save.
@@ -8,7 +8,7 @@
    (lewat `Pengawas Teknik Oda.vbs` yang menyala saat Windows dinyalakan).
 
 ## Nama versi
-`27.1.20` = untuk **FM 27.1**, build Asisten ke-**20**. Nama berkas peluncur & shortcut ikut versi FM.
+`27.1.21` = untuk **FM 27.1**, build Asisten ke-**21**. Nama berkas peluncur & shortcut ikut versi FM.
 
 ## Deteksi update FM
 FM hanya melaporkan "27.1", jadi Asisten memeriksa:
