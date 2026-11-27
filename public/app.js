@@ -773,9 +773,26 @@ const PITCH_POS = [['ST', 50, 10], ['AML', 15, 26], ['AMC', 50, 28], ['AMR', 85,
 const POS_GROUP = { GK: 'GK', DC: 'DC', DL: 'FB', DR: 'FB', WBL: 'WB', WBR: 'WB', DM: 'DM', MC: 'MC', ML: 'WM', MR: 'WM', AMC: 'AMC', AML: 'W', AMR: 'W', ST: 'ST' };
 const starsAb = v => { const n = Math.max(0.5, Math.min(5, Math.round((v / 200) * 10) / 2)); return stars(n); };
 
-function fmCol(title, keys, raw, hl) {
+// Proyeksi "Lihat di PA" (ala Genie Scout): atribut diskalakan sebanding CA->PA, sama dengan cheat Set CA (+atribut)
+// Centang 'Tetap aktif': mode PA terbawa ke pemain lain (disimpan di browser)
+const paKeep = () => localStorage.getItem('asisten.paKeep') === '1';
+const PA_GK_KEEP = ['Anticipation', 'Decisions', 'Positioning', 'Concentration', 'Composure', 'Agility', 'FirstTouch', 'Passing', 'Acceleration', 'JumpingReach', 'Bravery'];
+function paProject(raw, ca, pa, isGK) {
+  if (!ca || !pa || pa <= ca) return null;
+  const f = Math.min(1.8, pa / ca); const gkOnly = new Set(FM_ORDER.goalkeeping.filter(k => !FM_ORDER.technical.includes(k)));
+  const out = { ...raw };
+  for (const k of [...FM_ORDER.technical, ...FM_ORDER.goalkeeping, ...FM_ORDER.mental, ...FM_ORDER.physical]) {
+    const v = raw[k]; if (!v || k === 'Determination') continue;
+    if (!isGK && gkOnly.has(k)) continue;
+    if (isGK && !gkOnly.has(k) && !PA_GK_KEEP.includes(k)) continue;
+    out[k] = Math.min(20, Math.max(v, Math.round(v * f)));
+  }
+  return out;
+}
+function fmCol(title, keys, raw, hl, base) {
   return `<div class="fm-col"><div class="fm-col-h">${title}</div>${keys.filter(k => k in raw).map(k => {
     const v = raw[k]; const h = hl.key.includes(k) ? 'key' : hl.imp.includes(k) ? 'imp' : '';
+    if (base) { const d = v - (base[k] ?? v); return `<div class="fm-attr ${h}"><span>${esc(LBL[k] || k)}</span><span class="pa-v">${d > 0 ? `<i class="pa-d">+${d}</i>` : ''}<b class="${aCls(v)}" title="Saat ini ${base[k]}">${v}</b></span></div>`; }
     return `<div class="fm-attr ${h}"><span>${esc(LBL[k] || k)}</span><b class="${aCls(v)} edit" data-edit="${k}" title="Klik untuk ubah di FM27">${v}</b></div>`;
   }).join('')}</div>`;
 }
@@ -808,16 +825,18 @@ const FM_RADAR_GK = [
   ['Distribusi', ['Kicking', 'Throwing', 'Passing']], ['Udara', ['AerialReach', 'CommandOfArea', 'JumpingReach']], ['Penanganan', ['Handling', 'FirstTouch']],
   ['Komunikasi', ['Communication', 'Eccentricity', 'RushingOut']], ['Mental', ['Anticipation', 'Bravery', 'Concentration', 'Decisions', 'Positioning']],
 ];
-function fmRadar(raw, isGK) {
-  const axes = (isGK ? FM_RADAR_GK : FM_RADAR).map(([l, ks]) => { const xs = ks.map(k => raw[k]).filter(v => v != null); return [l, xs.length ? xs.reduce((t, x) => t + x, 0) / xs.length : 0]; });
+function fmRadar(raw, isGK, ghost) {
+  const avg = (r, ks) => { const xs = ks.map(k => r[k]).filter(v => v != null); return xs.length ? xs.reduce((t, x) => t + x, 0) / xs.length : 0; };
+  const axes = (isGK ? FM_RADAR_GK : FM_RADAR).map(([l, ks]) => [l, avg(raw, ks), ghost ? avg(ghost, ks) : null]);
   const S = 340, c = S / 2, R = 104, n = axes.length;
   const pt = (i, r) => [c + r * Math.sin((Math.PI * 2 * i) / n), c - r * Math.cos((Math.PI * 2 * i) / n)];
   let g = '';
   [0.25, 0.5, 0.75, 1].forEach(f => g += `<polygon points="${axes.map((_, i) => pt(i, R * f).join(',')).join(' ')}" class="rg${f === 1 ? ' out' : ''}"/>`);
   axes.forEach((_, i) => { const [x, y] = pt(i, R); g += `<line x1="${c}" y1="${c}" x2="${x}" y2="${y}" class="rl"/>`; });
   const pts = axes.map(([, v], i) => pt(i, R * Math.max(0.04, v / 20)));
-  g += `<polygon points="${pts.map(p => p.join(',')).join(' ')}" class="rv"/>`;
-  pts.forEach(([x, y]) => g += `<circle cx="${x}" cy="${y}" r="3.6" class="rd"/>`);
+  g += `<polygon points="${pts.map(p => p.join(',')).join(' ')}" class="rv${ghost ? ' pa' : ''}"/>`;
+  if (ghost) g += `<polygon points="${axes.map(([, , v], i) => pt(i, R * Math.max(0.04, v / 20)).join(',')).join(' ')}" class="rv now"/>`;
+  pts.forEach(([x, y]) => g += `<circle cx="${x}" cy="${y}" r="3.6" class="rd${ghost ? ' pa' : ''}"/>`);
   axes.forEach(([l, v], i) => {
     const [x, y] = pt(i, R + 26); const anchor = Math.abs(x - c) < 8 ? 'middle' : x > c ? 'start' : 'end';
     const top = y < c - R; const bot = y > c + R;
@@ -841,7 +860,7 @@ async function openPlayer(id) {
   if (!TARGETS.size) await loadTargets().catch(() => {});
   const p = await pP;
   LBL = Object.fromEntries(Object.values(p.attrs).flat().map(a => [a.k, a.label]));
-  let tab = 'profil', live = null;
+  let tab = 'profil', live = null, paView = paKeep();
   let role = p.roles.find(r => r.natural) ? p.roles.find(r => r.natural).id : p.roles[0].id;
   const watched = () => SHORT.has(p.id);
   const isGK = p.bp === 'GK';
@@ -870,32 +889,35 @@ async function openPlayer(id) {
       <div class="card sc wide"><h4>Catatan Asisten</h4>${p.advice.length ? p.advice.slice(0, 3).map(a => `<div class="advice">${esc(a)}</div>`).join('') : '<p class="muted" style="margin:0">Tidak ada catatan khusus — pemain dalam kondisi wajar.</p>'}</div>
     </div>`;
   };
+  const paLg = () => ` <small class="pa-lg"><i class="now"></i>CA ${p.ca} <i class="pa"></i>PA ${p.pa}</small>`;
+  const paBar = proj => `<div class="pa-bar"><div class="pa-seg"><button data-paview="0" class="${!paView || !proj ? 'on' : ''}">Saat ini · CA ${p.ca}</button><button data-paview="1" class="${paView && proj ? 'on' : ''}" ${proj ? 'title="Perkiraan atribut bila CA mencapai PA"' : 'disabled title="CA sudah setara PA"'}>Lihat di PA · ${p.pa}</button></div><label class="pa-keep" title="Bila dicentang, pemain lain yang dibuka langsung tampil di PA"><input type="checkbox" data-pakeep ${paKeep() ? 'checked' : ''}> Tetap aktif</label></div>`;
   const body = () => {
     if (tab === 'profil') {
       const rk = p.roleKeys[role] || { key: [], imp: [] };
       const hidden = [...p.personality.map(a => ({ label: a.label, v: a.v, inv: a.k === 'controversy' })), ...p.attrs.hidden.map(a => ({ label: a.label, v: a.v, inv: ['InjuryProneness', 'Dirtiness'].includes(a.k) }))];
       const roles = [...p.roles].sort((a, b) => (b.natural - a.natural) || (b.score - a.score)).slice(0, 7);
+      const proj = paProject(p.raw, p.ca, p.pa, isGK); const pv = paView && proj; const A = pv ? proj : p.raw; const B = pv ? p.raw : null;
       return `<div class="pro-grid">
         <div class="pro-left">
           <div class="card"><h4>Posisi <small>${esc(p.pos)}</small></h4>${posMap(p)}</div>
           <div class="card"><h4>Peran <small>klik untuk sorot atribut</small></h4><div class="role-list">${roles.map(r => `<button class="role ${r.id === role ? 'on' : ''}" data-role="${r.id}"><span class="stars">${stars(Math.max(0.5, Math.round((r.score / 100) * 10) / 2))}</span><span class="rn">${esc(r.name)}${r.natural ? '' : ' <small>(non-natural)</small>'}</span><b>${r.score.toFixed(0)}</b></button>`).join('')}</div>
             <div class="pm-leg" style="margin-top:10px"><span><i class="hl key"></i>Kunci</span><span><i class="hl imp"></i>Penting</span></div></div>
         </div>
-        <div class="card pro-attrs"><div class="fm-attrs">${isGK ? fmCol('Kiper', FM_ORDER.goalkeeping, p.raw, rk) : fmCol('Teknik', FM_ORDER.technical, p.raw, rk)}${fmCol('Mental', FM_ORDER.mental, p.raw, rk)}${fmCol('Fisik', FM_ORDER.physical, p.raw, rk)}</div>
-          <div class="attr-legend"><b class="a6">18–20</b><b class="a5">15–17</b><b class="a4">12–14</b><b class="a3">9–11</b><b class="a2">6–8</b><b class="a1">1–5</b><span>· klik angka untuk mengubah di FM27</span></div></div>
+        <div class="card pro-attrs${pv ? ' pa-on' : ''}">${paBar(proj)}<div class="fm-attrs">${isGK ? fmCol('Kiper', FM_ORDER.goalkeeping, A, rk, B) : fmCol('Teknik', FM_ORDER.technical, A, rk, B)}${fmCol('Mental', FM_ORDER.mental, A, rk, B)}${fmCol('Fisik', FM_ORDER.physical, A, rk, B)}</div>
+          <div class="attr-legend"><b class="a6">18–20</b><b class="a5">15–17</b><b class="a4">12–14</b><b class="a3">9–11</b><b class="a2">6–8</b><b class="a1">1–5</b><span>${pv ? '· perkiraan atribut saat CA mencapai PA (bukan nilai pasti dari FM)' : '· klik angka untuk mengubah di FM27'}</span></div></div>
         <div class="pro-right">
-          <div class="card"><h4>Grafik Atribut</h4>${fmRadar(p.raw, isGK)}</div>
+          <div class="card"><h4>Grafik Atribut${pv ? paLg() : ''}</h4>${fmRadar(A, isGK, B)}</div>
           <div class="card"><h4>Info</h4><div class="kv"><span>Tinggi</span><b>${p.height || '?'} cm</b></div><div class="kv"><span>Kaki</span><b>${foot}</b></div><div class="kv"><span>Kepribadian</span><b>${esc(p.pers || '—')}</b></div><div class="kv"><span>Reputasi dunia</span><b>${p.worldRep ?? '—'}</b></div>${p.dob ? `<div class="kv"><span>Lahir</span><b>${esc(p.dob)}</b></div>` : ''}</div>
           <details class="card hid"><summary><h4>Atribut Tersembunyi</h4></summary><div class="fm-hidden">${hidden.map(h => `<div class="fm-attr"><span>${esc(h.label)}</span><b class="${aCls(h.inv ? 21 - h.v : h.v)}">${h.v ?? '—'}</b></div>`).join('')}</div></details>
         </div>
       </div>${status()}`;
     }
     if (tab === 'cheat') return `<div class="grid g2"><div class="card"><h3>🚀 Push CA → PA <small>CA ${p.ca} → PA ${p.pa}</small></h3><div class="stage-row">${STAGE_BTNS.map(([k, n, pct], i) => `<button class="stage s${i}" data-pstage="${k}"><b>${n}</b><small>${pct}</small></button>`).join('')}</div><label class="chk"><input type="checkbox" id="pWith" checked> Naikkan atribut juga</label></div><div class="card"><h3>Aksi Cepat</h3><div class="row-flex"><button class="btn" data-pq="pa">PA → 200</button><button class="btn" data-pq="hidden">Tersembunyi terbaik</button><button class="btn" data-pq="pers">Kepribadian teladan</button><button class="btn" data-pq="perpanjang">Kontrak +5 th</button><button class="btn" data-pq="gaji">Gaji −50%</button><button class="btn" data-pc="cedera">Pulihkan cedera</button><button class="btn" data-pc="ban">Hapus larangan</button><button class="btn" data-pc="bahagia">Bikin bahagia</button><button class="btn" data-pcit="1" title="Kewarganegaraan kedua negara liga klub Anda (Inggris untuk Premier League) — tidak perlu izin kerja & tidak dihitung non-UE">🛂 Lolos izin kerja & non-UE</button><button class="btn" data-pc="klausul">Hapus klausul rilis</button><button class="btn" data-pc="trait">Hapus trait</button><button class="btn" data-preg="8,19,0">Daftarkan ke semua kompetisi</button><button class="btn" data-plove="1">❤️ Suka pada saya</button><button class="btn" data-prel="1">🤝 Klausul rilis ${money(relFeeGet())}</button></div><p class="muted" style="font-size:12.5px;margin:12px 0 0">Tip: di tab Ringkasan, klik angka atribut mana pun untuk mengubahnya langsung.</p></div></div>`;
-    if (tab === 'analisis') return `<div class="grid g2"><div class="card"><h3>Grafik Atribut</h3>${fmRadar(p.raw, isGK)}</div>
+    if (tab === 'analisis') { const proj = paProject(p.raw, p.ca, p.pa, isGK); const pv = paView && proj; return `<div class="grid g2"><div class="card">${paBar(proj)}<h3>Grafik Atribut${pv ? paLg() : ''}</h3>${pv ? fmRadar(proj, isGK, p.raw) : fmRadar(p.raw, isGK)}</div>
       <div class="card"><h3>Standar ${esc(p.assess?.posName || '')}</h3><p style="margin:0 0 10px">Level saat ini: <b>${esc(p.assess?.tier || '—')}</b></p>
       ${p.assess && p.assess.gaps.length ? `<p class="muted" style="margin:0 0 8px">Agar kelas dunia, atribut kunci ini perlu mencapai 16:</p>${p.assess.gaps.map(g => `<div class="fm-attr"><span>${esc(g.label)}</span><b class="${aCls(g.v)}">${g.v} → ${g.need}</b></div>`).join('')}` : '<div class="advice">Semua atribut kunci sudah di level kelas dunia.</div>'}
       <a class="btn sm" style="margin-top:12px" href="#panduan?pos=${p.bp}">Lihat panduan posisi →</a></div></div>
-      <div class="card" style="margin-top:16px"><h3>Analisis Asisten</h3>${p.advice.length ? p.advice.map(a => `<div class="advice">${esc(a)}</div>`).join('') : '<p class="muted">Tidak ada catatan khusus.</p>'}</div>`;
+      <div class="card" style="margin-top:16px"><h3>Analisis Asisten</h3>${p.advice.length ? p.advice.map(a => `<div class="advice">${esc(a)}</div>`).join('') : '<p class="muted">Tidak ada catatan khusus.</p>'}</div>`; }
     if (tab === 'peran') return `<div class="grid g2"><div class="card"><h3>Rating per Posisi</h3>${p.positions.map(x => `<div class="li" style="cursor:default"><span class="score ${sCls(x.r)}">${x.r.toFixed(0)}</span><div class="grow"><b>${esc(x.label)}</b><small>${x.fam === 1 ? 'Natural' : x.fam >= 0.9 ? 'Cukup akrab' : 'Asing'}</small></div><div class="bar b-${sCls(x.r)}" style="width:100px"><i style="width:${x.r}%"></i></div></div>`).join('')}</div>
       <div class="card"><h3>Peran Terbaik</h3>${p.roles.map(r => `<div class="li" style="cursor:default"><span class="score ${sCls(r.score)}">${r.score.toFixed(0)}</span><div class="grow"><b>${esc(r.name)}</b><small>${esc(r.en)}${r.natural ? '' : ' · posisi tidak natural'}</small></div></div>`).join('')}</div></div>`;
     if (tab === 'mirip') return `<div class="card"><h3>Pemain dengan profil atribut mirip <small>posisi ${esc(p.bpLabel)}</small></h3>${p.similar ? playerTable(p.similar, { cols: ['name', 'sim', 'age', 'capa', 'rating', 'value', 'wage'] }) : loading('Mencari pemain mirip…')}</div>`;
@@ -905,6 +927,8 @@ async function openPlayer(id) {
   const bindBody = () => {
     const D = $('#drawer');
     D.querySelectorAll('[data-role]').forEach(b => b.onclick = () => { role = b.dataset.role; drawBody(); });
+    D.querySelectorAll('[data-paview]').forEach(b => b.onclick = () => { paView = b.dataset.paview === '1'; if (paKeep() && !paView) localStorage.setItem('asisten.paKeep', '0'); drawBody(); });
+    D.querySelectorAll('[data-pakeep]').forEach(c => c.onchange = () => { localStorage.setItem('asisten.paKeep', c.checked ? '1' : '0'); if (c.checked) paView = true; drawBody(); });
     D.querySelectorAll('[data-pstage]').forEach(b => b.onclick = async () => { if (await runCheat('push', me, { stage: b.dataset.pstage, withAttrs: $('#pWith').checked }, `${p.name}: push CA→PA tahap ${b.querySelector('b').textContent}`)) reopen(); });
     D.querySelectorAll('[data-pq]').forEach(b => b.onclick = async () => { const q = b.dataset.pq; const r = q === 'pa' ? await runCheat('pa', me, { value: 200 }, `${p.name}: PA → 200`) : q === 'perpanjang' ? await runCheat('contract', me, { op: 'perpanjang', n: 5 }, `${p.name}: kontrak +5 tahun`) : q === 'gaji' ? await runCheat('contract', me, { op: 'gaji', n: 50 }, `${p.name}: gaji −50%`) : await runCheat(q, me, {}, `${p.name}: ${b.textContent}`); if (r) reopen(); });
     D.querySelectorAll('[data-pcit]').forEach(b => b.onclick = async () => { const r = await runCheat('citizen', me, {}, `${p.name}: tambah kewarganegaraan kedua (lolos aturan non-UE)`); if (r && r.nat) toast(r.players ? `🛂 ${p.name} kini juga warga ${r.nat} — tidak perlu izin kerja / non-UE (buka ulang layar FM)` : (r.msg || 'Tidak ada perubahan'), r.players ? 'ok' : 'info'); });

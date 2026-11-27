@@ -1,4 +1,4 @@
-# Asisten FM27 — v27.1.21 (untuk Football Manager 27, versi 27.1)
+# Asisten FM27 — v27.1.22 (untuk Football Manager 27, versi 27.1)
 
 ## Membuka
 1. Jalankan FM27 dan muat save.

@@ -119,3 +119,24 @@ details.hid[open] summary h4::after { transform: rotate(180deg); }
   .pro-top { padding: 18px 16px 14px; }
   .pro-abil { border-left: 0; padding-left: 0; }
 }
+
+/* Lihat di PA (proyeksi atribut ala Genie Scout) */
+.pa-bar { display: flex; justify-content: flex-end; margin: -4px 0 10px; }
+.pa-seg { display: inline-flex; background: var(--row-alt, #f2f0ea); border-radius: 9px; padding: 3px; gap: 2px; }
+.pa-seg button { border: 0; background: none; padding: 5px 11px; border-radius: 7px; font: inherit; font-size: 12.5px; font-weight: 600; color: var(--ink-2); cursor: pointer; }
+.pa-seg button.on { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
+.pa-seg button[data-paview="1"].on { background: var(--gold, #c99a2e); color: #fff; }
+.pa-seg button:disabled { opacity: .45; cursor: not-allowed; }
+.pa-on { outline: 2px dashed var(--gold, #c99a2e); outline-offset: -2px; }
+.pa-v { display: inline-flex; align-items: center; gap: 6px; }
+.pa-d { font-style: normal; font-size: 11px; font-weight: 700; color: var(--gold, #c99a2e); }
+.fm-radar .rv.pa { fill: rgba(201, 154, 46, .2); stroke: var(--gold, #c99a2e); }
+.fm-radar .rd.pa { fill: var(--gold, #c99a2e); }
+.fm-radar .rv.now { fill: rgba(18, 112, 95, .1); stroke: var(--brand); stroke-dasharray: 4 3; stroke-width: 1.6; }
+.pa-lg { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; }
+.pa-lg i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; margin-left: 6px; }
+.pa-lg i.now { background: var(--brand); opacity: .55; }
+.pa-lg i.pa { background: var(--gold, #c99a2e); }
+.pa-bar { align-items: center; gap: 12px; }
+.pa-keep { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 600; color: var(--ink-2); cursor: pointer; user-select: none; }
+.pa-keep input { accent-color: var(--gold, #c99a2e); margin: 0; }

@@ -2,6 +2,10 @@
 
 Format versi: `27.1.x` = untuk **Football Manager 27 versi 27.1**, build Asisten ke-x.
 
+## 27.1.22 — 27 Nov 2026
+- **Baru — Lihat di PA** (profil pemain, tab Ringkasan & Analisis): seperti Genie Scout, atribut dan grafik menunjukkan perkiraan saat CA mencapai PA. Angka tambahan tampil di sebelah tiap atribut (+4), grafik menampilkan bentuk sekarang (hijau putus-putus) dan di PA (emas). Perkiraan memakai skala yang sama dengan cheat Set CA + atribut; hasil asli di FM bisa berbeda.
+- **☑ Tetap aktif:** bila dicentang, pemain lain yang dibuka langsung tampil di PA. Pilihan disimpan.
+
 ## 27.1.21 — 27 Nov 2026
 - **Mendukung Teknik Oda 1.1.1:** badge CA/PA di profil pemain FM kini menempel ke logo "T" Teknik Oda yang baru (strip tombol profil 1.1+). Di skin FMU strip itu menyusut jadi logo saja. Tombol Compare lama (Teknik Oda 1.0.x) tetap dikenali. Data pemain, staf, kantor, latihan dan plugin Jembatan sudah dicek dengan 1.1.1 tanpa perubahan.
 
