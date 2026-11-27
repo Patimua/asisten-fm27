@@ -2,6 +2,10 @@
 
 Format versi: `27.1.x` = untuk **Football Manager 27 versi 27.1**, build Asisten ke-x.
 
+## 27.1.23 — 27 Nov 2026
+- **Panah ‹ › profil pemain tidak berpindah lagi:** kini selalu di ujung kiri baris tab. Tinggi header tetap untuk semua pemain (nama/klub panjang dipotong dengan …, tidak melipat).
+- **Lihat di PA:** mematikan centang *Tetap aktif* langsung mengembalikan tampilan ke CA. Tombol Saat ini / Lihat di PA kini kontras di tema gelap.
+
 ## 27.1.22 — 27 Nov 2026
 - **Baru — Lihat di PA** (profil pemain, tab Ringkasan & Analisis): seperti Genie Scout, atribut dan grafik menunjukkan perkiraan saat CA mencapai PA. Angka tambahan tampil di sebelah tiap atribut (+4), grafik menampilkan bentuk sekarang (hijau putus-putus) dan di PA (emas). Perkiraan memakai skala yang sama dengan cheat Set CA + atribut; hasil asli di FM bisa berbeda.
 - **☑ Tetap aktif:** bila dicentang, pemain lain yang dibuka langsung tampil di PA. Pilihan disimpan.

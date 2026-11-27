@@ -140,3 +140,29 @@ details.hid[open] summary h4::after { transform: rotate(180deg); }
 .pa-bar { align-items: center; gap: 12px; }
 .pa-keep { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 600; color: var(--ink-2); cursor: pointer; user-select: none; }
 .pa-keep input { accent-color: var(--gold, #c99a2e); margin: 0; }
+
+/* Header profil tetap: tinggi baris atas tetap, panah ‹ › di ujung kiri baris tab (posisi sama untuk semua pemain) */
+.pro-top { flex-wrap: nowrap; height: 150px; box-sizing: border-box; }
+.pro-id { flex: 1 1 260px; min-width: 220px; max-width: 440px; overflow: hidden; }
+.pro-id h2 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pro-id .row-flex { flex-wrap: nowrap; overflow: hidden; }
+.pro-id .badge { white-space: nowrap; flex: none; }
+.pro-blk { flex: 0 1 auto; min-width: 0; overflow: hidden; }
+.pro-blk > div { min-width: 0; }
+.pro-blk b, .pro-blk small { overflow: hidden; text-overflow: ellipsis; }
+.pro-abil { flex: none; margin-left: auto; }
+.pro-bar { flex-wrap: nowrap; justify-content: flex-start; align-items: center; overflow-x: auto; scrollbar-width: none; }
+.pro-bar .tabs { flex: none; align-self: flex-end; }
+.pro-nav { flex: none; margin: 8px 6px 8px 0; }
+.pro-nav .btn { background: rgba(255, 255, 255, .16); color: #fff; border-color: transparent; }
+.pro-nav .btn:hover:not(:disabled) { background: rgba(255, 255, 255, .28); }
+.pro-nav span { min-width: 72px; }
+.pro-act { flex-wrap: nowrap; flex: none; margin-left: auto; }
+@media (max-width: 1100px) { .pro-top { flex-wrap: wrap; height: auto; } }
+
+/* Kontras tombol Saat ini / Lihat di PA (tema terang & gelap) */
+.pa-seg { background: rgba(127, 127, 127, .16); border: 1px solid rgba(127, 127, 127, .28); }
+.pa-seg button { color: var(--ink-2); }
+.pa-seg button[data-paview="0"].on { background: var(--brand, #12705f); color: #04140b; box-shadow: none; }
+:root:not([data-theme="dark"]) .pa-seg button[data-paview="0"].on { color: #fff; }
+.pa-seg button[data-paview="1"].on { background: var(--gold, #c99a2e); color: #1a1200; box-shadow: none; }
